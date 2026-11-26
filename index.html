@@ -1,122 +1,129 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Attention microscope</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="brand/logo-green-disc.png">
+<link rel="stylesheet" href="brand/deep-culture.css">
 <style>
-/* VOICE everyday learning instrument: precise, calm, lab-like
-   IDEA a stained slide under a microscope: features are stains, W_Q, W_K, W_V are three lenses
-   PICTURE the specimen sentence with attention arcs from the focused token, beside the full attention grid
-   COLOUR white slide (darkfield at night), hematoxylin indigo for negatives and targets, eosin pink for positives and attention
-   TYPE Instrument Sans 600 + Instrument Sans
-   LAYOUT laptop: specimen and grid left, lens readout right; lenses beside training; maps below. Phone: one column */
-:root{color-scheme:light dark;--bg:light-dark(#ffffff,#0c0c11);--ink:light-dark(#16141c,#ecebf2);--mute:light-dark(#5d5a68,#a3a1b0);--line:light-dark(#e2e0e8,#2b2a36);--panel:light-dark(#f6f5f9,#15151d);--hx:light-dark(#3f3cb4,#9d9aff);--eo:light-dark(#d6336f,#ff6f9f)}
-:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+/* White app (evidence and analysis) under the Deep Culture purple band.
+   Purple = attention and positive weights, blue = negative weights (second series), green-dark = targets. */
+:root{color-scheme:light;--bg:#ffffff;--page:#f4f1f4;--ink:var(--dc-ink);--mute:var(--dc-grey-dark);--line:#e3dbe1;--panel:#ffffff;--tint:var(--dc-purple-tint);--eo:var(--dc-purple);--hx:var(--dc-blue);--ok:var(--dc-green-dark)}
 *{box-sizing:border-box;min-width:0}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 'Instrument Sans',system-ui,sans-serif;overflow-x:clip}
-.band{padding:clamp(20px,3vw,40px) max(4vw,16px)}
+body{margin:0;background:var(--page);color:var(--ink);font:16px/1.5 var(--dc-font);overflow-x:clip}
+.band{padding:clamp(20px,3vw,36px) max(4vw,16px)}
 .wrap{max-width:1240px;margin:0 auto}
-h1{font-size:clamp(32px,4.5vw,46px);line-height:1.05;letter-spacing:-.02em;margin:0 0 8px;font-weight:600;text-wrap:balance}
-h2{font-size:20px;line-height:1.2;margin:0 0 4px;font-weight:600}
+.topbar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:16px 24px;align-items:center}
+.topbar .dc-logo{height:64px}
+h1{font-size:clamp(28px,4vw,40px);line-height:1.25;margin:0 0 8px;font-weight:500}
+h2{font-size:19px;line-height:1.5;margin:0 0 6px;font-weight:500}
+h3{font-size:17px;margin:0 0 4px;font-weight:500;color:var(--dc-purple)}
 p{margin:0}
-.lede{color:var(--mute);max-width:64ch}
-.note{color:var(--mute);font-size:14px}
-.top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px 32px;align-items:end}
+.lede{color:rgba(255,255,255,.85);font-weight:300;max-width:66ch}
+.note{color:var(--mute);font-size:14px;font-weight:300}
 .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-button,select{font:inherit;font-size:15px;min-height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
-button:hover,select:hover{border-color:var(--mute)}
-button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--hx);outline-offset:2px}
+button,select{font:inherit;font-size:15px;min-height:44px;padding:0 14px;border-radius:6px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+button:hover,select:hover{background:var(--tint);border-color:var(--dc-purple-line)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--ok);outline-offset:2px}
 button:disabled{opacity:.5;cursor:default}
-button.pri{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-button[aria-pressed=true]{background:var(--hx);color:#fff;border-color:var(--hx)}
+button.pri{background:var(--dc-purple);color:#fff;border-color:var(--dc-purple)}
+button.pri:hover{background:var(--dc-purple-dark)}
+button[aria-pressed=true]{background:var(--dc-purple);color:#fff;border-color:var(--dc-purple)}
+.dc-band select{background:transparent;color:#fff;border-color:rgba(255,255,255,.5)}
+.dc-band select:hover{background:var(--dc-green);color:var(--dc-black)}
+.dc-band select option{color:var(--dc-ink)}
+.dc-band label.ck{color:#fff}
 label.ck{display:inline-flex;gap:8px;align-items:center;min-height:44px;font-size:15px;white-space:nowrap}
-input[type=checkbox]{width:20px;height:20px;accent-color:var(--hx)}
+input[type=checkbox]{width:20px;height:20px;accent-color:var(--dc-green)}
 .grid2{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:20px;margin-top:20px}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
-.stage{background:radial-gradient(circle at 50% 55%,var(--bg) 0 58%,var(--panel) 100%)}
+.panel{background:#fff;border:1px solid var(--line);border-radius:8px;padding:18px}
 .head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:baseline;margin-bottom:10px}
 .scroll{overflow-x:auto}
 #specwrap{margin:0 -6px}
 #spec{display:block;height:230px}
-#spec .chip{fill:var(--panel);stroke:var(--line);cursor:pointer}
-#spec .chip.on{fill:var(--ink);stroke:var(--ink)}
-#spec .w{fill:var(--ink);font-size:15px;font-weight:500;pointer-events:none}
-#spec .w.on{fill:var(--bg)}
-#spec .pc{fill:var(--mute);font-size:13px;font-variant-numeric:tabular-nums}
-#spec .pc.max{fill:var(--eo);font-weight:700}
-#spec .arc{fill:none;stroke:var(--eo);stroke-linecap:round}
-#spec .tg{fill:var(--hx)}
+#spec .chip{fill:#fff;stroke:var(--line);cursor:pointer}
+#spec .chip.on{fill:var(--dc-purple);stroke:var(--dc-purple)}
+#spec .w{fill:var(--ink);font-size:15px;font-weight:500;font-family:var(--dc-font);pointer-events:none}
+#spec .w.on{fill:#fff}
+#spec .pc{fill:var(--mute);font-size:13px;font-family:var(--dc-font);font-variant-numeric:tabular-nums}
+#spec .pc.max{fill:var(--dc-purple);font-weight:700}
+#spec .arc{fill:none;stroke:var(--dc-purple);stroke-linecap:round}
+#spec .tg{fill:var(--ok)}
 .ag{display:grid;gap:3px;margin-top:14px}
 .ag .ch{font-size:13px;color:var(--mute);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-bottom:2px}
-.ag .rl{font-size:13px;min-height:38px;padding:0 6px;border:0;background:none;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-radius:6px}
-.ag .rl.on{background:var(--ink);color:var(--bg)}
-.ag .cell{min-height:38px;padding:0;border:0;border-radius:6px;font-size:13px;font-variant-numeric:tabular-nums}
-.ag .cell.t{box-shadow:inset 0 0 0 2.5px var(--hx)}
-.ag .cell.x{background:repeating-linear-gradient(45deg,var(--panel) 0 4px,var(--line) 4px 6px)!important;color:transparent}
+.ag .rl{font-size:13px;min-height:38px;padding:0 6px;border:0;background:none;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-radius:4px}
+.ag .rl.on{background:var(--dc-purple);color:#fff}
+.ag .cell{min-height:38px;padding:0;border:0;border-radius:4px;font-size:13px;font-variant-numeric:tabular-nums}
+.ag .cell.t{box-shadow:inset 0 0 0 2.5px var(--ok)}
+.ag .cell.x{background:repeating-linear-gradient(45deg,#fff 0 4px,var(--line) 4px 6px)!important;color:transparent}
 .legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--mute);margin-top:10px}
-.legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:6px}
 .lens{display:grid;grid-template-columns:6.6em repeat(3,minmax(0,1fr)) 4.4em;gap:6px 10px;align-items:center;font-size:14px}
-.lens .lh{font-size:13px;color:var(--mute);line-height:1.2;align-self:end}
-.sb{position:relative;height:18px;background:var(--bg);border-radius:4px;border:1px solid var(--line)}
-.sb::after{content:'';position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--mute);opacity:.5}
-.sb i{position:absolute;top:2px;bottom:2px;border-radius:3px}
+.lens .lh{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--dc-purple);line-height:1.25;align-self:end}
+.sb{position:relative;height:18px;background:var(--dc-paper-2);border-radius:3px;border:1px solid var(--line)}
+.sb::after{content:'';position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--dc-grey);opacity:.6}
+.sb i{position:absolute;top:2px;bottom:2px;border-radius:2px}
 .pass{font-size:13px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-.hid{color:var(--hx);font-weight:600}
-#lenssum{margin-top:14px;font-size:15px}
+.hid{color:var(--dc-purple-dark);font-weight:700}
+#lenssum{margin-top:14px;font-size:15px;background:var(--tint);border-left:4px solid var(--dc-purple);padding:10px 12px;border-radius:0 4px 4px 0}
 .tabs{display:flex;gap:6px;margin:10px 0}
-.tabs button{flex:1}
+.tabs button{flex:1;color:var(--mute)}
+.tabs button[aria-pressed=true]{color:#fff}
 .mat{display:grid;gap:3px;align-items:center}
-.mat .mh{font-size:13px;color:var(--mute);text-align:center}
+.mat .mh{font-size:12px;font-weight:700;color:var(--dc-purple);text-align:center}
 .mat .ml{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mat .mc{min-height:38px;padding:0;border:0;border-radius:6px;font-size:13px;font-variant-numeric:tabular-nums}
+.mat .mc{min-height:38px;padding:0;border:0;border-radius:4px;font-size:13px;font-variant-numeric:tabular-nums}
 .mat .mc.on{outline:2.5px solid var(--ink);outline-offset:1px}
 .seen{padding-left:6px}
-.sbar{display:block;height:8px;border-radius:4px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
-.sbar i{display:block;height:100%;background:var(--ink)}
+.sbar{display:block;height:8px;border-radius:4px;background:var(--tint);overflow:hidden}
+.sbar i{display:block;height:100%;background:var(--dc-purple)}
 .edit{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;align-items:center;margin-top:12px}
-input[type=range]{width:100%;accent-color:var(--eo);height:44px}
-#cellinfo{font-size:14px;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--dc-purple);height:44px}
+#cellinfo{font-size:14px;font-family:var(--dc-mono)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .chips button{min-height:40px;font-size:14px;padding:0 12px}
-.stat{font-size:14px;font-variant-numeric:tabular-nums;min-height:1.5em;margin-top:8px}
-.warn{color:var(--eo);font-size:14px;min-height:1.5em}
+.stat{font-size:14px;font-variant-numeric:tabular-nums;min-height:1.5em;margin-top:8px;color:var(--ok);font-weight:500}
+.warn{color:var(--dc-purple-dark);font-size:14px;min-height:1.5em}
 .sec+.sec{border-top:1px solid var(--line);margin-top:18px;padding-top:18px}
 .maps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:20px}
 .fm{display:grid;grid-template-columns:3.4em repeat(8,minmax(0,1fr));gap:2px;margin-top:10px}
-.fm div{font-size:13px;text-align:center;min-height:30px;display:flex;align-items:center;justify-content:center;border-radius:4px;color:var(--mute)}
+.fm div{font-size:12px;text-align:center;min-height:30px;display:flex;align-items:center;justify-content:center;border-radius:3px;color:var(--mute)}
 .fm .r{justify-content:flex-end;padding-right:4px}
-ul.how{margin:10px 0 0;padding-left:1.2em;display:grid;gap:6px;font-size:15px}
-@media(max-width:860px){.grid2,.maps{grid-template-columns:minmax(0,1fr)}.top{grid-template-columns:minmax(0,1fr)}}
-@media(max-width:420px){.lens{grid-template-columns:5.6em repeat(3,minmax(0,1fr)) 3.6em;gap:5px 6px}}
+.tip{background:var(--tint);border-left:4px solid var(--dc-purple);border-radius:0 8px 8px 0;padding:16px 18px;margin-top:20px}
+.tip .k{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--dc-purple)}
+ul.how{margin:8px 0 0;padding-left:1.2em;display:grid;gap:6px;font-size:15px}
+ul.how li::marker{color:var(--dc-purple)}
+footer{color:var(--mute);font-size:13px;font-weight:300}
+@media(max-width:860px){.grid2,.maps{grid-template-columns:minmax(0,1fr)}.topbar{grid-template-columns:auto minmax(0,1fr)}.topbar .bar{grid-column:1/-1}}
+@media(max-width:420px){.lens{grid-template-columns:5.6em repeat(3,minmax(0,1fr)) 3.6em;gap:5px 6px}.topbar .dc-logo{height:44px}}
 </style></head><body>
 
-<header class="band"><div class="wrap top">
+<header class="band topbar dc-band dc-on-dark">
+  <img class="dc-logo" src="brand/logo-green-lines.png" alt="Deep Culture">
   <div>
-    <h1>Attention microscope</h1>
-    <p class="lede">One attention head, a toy language and eight readable features. Set or train W<sub>Q</sub>, W<sub>K</sub> and W<sub>V</sub>, then watch which features each lens lets through and which it leaves invisible.</p>
+    <h1><span class="dc-highlight">Attention microscope</span></h1>
+    <p class="lede">One attention head, a toy language and eight readable features. Set or train W<sub>Q</sub>, W<sub>K</sub> and W<sub>V</sub>, then watch which features each lens lets through and which it leaves invisible. · Deep Culture, University of Amsterdam</p>
   </div>
   <div class="bar">
     <select id="preset" aria-label="Preset head"></select>
     <label class="ck">d<sub>head</sub> <select id="dh" aria-label="Head dimension"></select></label>
     <label class="ck"><input type="checkbox" id="causal"> Causal mask</label>
   </div>
-</div></header>
+</header>
 
-<main class="band" style="padding-top:0"><div class="wrap">
+<main class="band" style="padding-top:4px"><div class="wrap">
   <div class="grid2">
-    <section class="panel stage">
-      <div class="head"><h2 id="foclabel">Specimen</h2>
+    <section class="panel">
+      <div class="head"><h2><span class="dc-highlight" id="foclabel">Specimen</span></h2>
         <div class="bar"><button id="prevS" aria-label="Previous sentence">‹</button><button id="randS">New sentence</button><button id="nextS" aria-label="Next sentence">›</button></div></div>
       <p class="note">Tap a word to put it under the lens. Arcs show where it sends its attention.</p>
       <div id="specwrap" class="scroll"><svg id="spec" role="img" aria-label="Attention arcs from the focused word"></svg></div>
-      <div class="head" style="margin-top:6px"><h2>Attention grid</h2><button id="paint" aria-pressed="false">Paint targets</button></div>
+      <div class="head" style="margin-top:6px"><h2><span class="dc-highlight">Attention grid</span></h2><button id="paint" aria-pressed="false">Paint targets</button></div>
       <p class="note">Rows are queries, columns are keys. Outlined cells are the training target for the chosen rule.</p>
       <div class="scroll"><div id="ag" class="ag"></div></div>
-      <div class="legend"><span><i style="background:var(--eo)"></i>attention weight</span><span><i style="box-shadow:inset 0 0 0 2.5px var(--hx)"></i>target</span><span><i style="background:repeating-linear-gradient(45deg,var(--panel) 0 4px,var(--line) 4px 6px)"></i>masked</span></div>
+      <div class="legend"><span><i style="background:var(--eo)"></i>attention weight</span><span><i style="box-shadow:inset 0 0 0 2.5px var(--ok)"></i>target</span><span><i style="background:repeating-linear-gradient(45deg,#fff 0 4px,var(--line) 4px 6px)"></i>masked</span></div>
     </section>
 
     <section class="panel">
-      <h2>Through the lens</h2>
+      <h2><span class="dc-highlight">Through the lens</span></h2>
       <p class="note">For the focused word: its own features, the mix of features in what it attends to, and what actually comes out after W<sub>V</sub> (read back with W<sub>V</sub><sup>T</sup>).</p>
       <div id="lens" class="lens" style="margin-top:14px"></div>
       <p id="lenssum"></p>
@@ -125,7 +132,7 @@ ul.how{margin:10px 0 0;padding-left:1.2em;display:grid;gap:6px;font-size:15px}
 
   <div class="grid2">
     <section class="panel">
-      <h2>The three lenses</h2>
+      <h2><span class="dc-highlight">The three lenses</span></h2>
       <p class="note">Rows are input features, columns the head's dimensions. A row of zeros makes that feature invisible to the lens.</p>
       <div class="tabs" role="tablist">
         <button data-tab="q" role="tab">W<sub>Q</sub> looks for</button><button data-tab="k" role="tab">W<sub>K</sub> shows</button><button data-tab="v" role="tab">W<sub>V</sub> hands over</button>
@@ -141,13 +148,13 @@ ul.how{margin:10px 0 0;padding-left:1.2em;display:grid;gap:6px;font-size:15px}
 
     <section class="panel">
       <div class="sec">
-        <h2>Train where to look</h2>
+        <h2><span class="dc-highlight">Train where to look</span></h2>
         <p class="note">Gradient descent on W<sub>Q</sub> and W<sub>K</sub> only, using cross-entropy against the target attention across 60 sentences.</p>
         <div class="bar" style="margin-top:10px"><select id="rule" aria-label="Target rule"></select><button id="trainqk" class="pri">Train W<sub>Q</sub>, W<sub>K</sub></button></div>
         <p class="stat" id="qkstat"></p>
       </div>
       <div class="sec">
-        <h2>Train what to carry</h2>
+        <h3>Train what to carry</h3>
         <p class="note">Pick the features W<sub>V</sub> should pass from the attended words. Everything else should vanish.</p>
         <div class="chips" id="vsel"></div>
         <p class="warn" id="vwarn"></p>
@@ -158,12 +165,12 @@ ul.how{margin:10px 0 0;padding-left:1.2em;display:grid;gap:6px;font-size:15px}
   </div>
 
   <div class="maps">
-    <section class="panel"><h2>W<sub>Q</sub>W<sub>K</sub><sup>T</sup>: who looks for whom</h2><p class="note">Row feature of the query × column feature of the key. Pink pairs attract, indigo pairs repel.</p><div class="scroll"><div id="qkmap" class="fm"></div></div></section>
-    <section class="panel"><h2>W<sub>V</sub>W<sub>V</sub><sup>T</sup>: what passes</h2><p class="note">A clean diagonal means features pass unchanged. Off-diagonal colour means they blur into each other.</p><div class="scroll"><div id="ovmap" class="fm"></div></div></section>
+    <section class="panel"><h3>W<sub>Q</sub>W<sub>K</sub><sup>T</sup>: who looks for whom</h3><p class="note">Row feature of the query × column feature of the key. Purple pairs attract, blue pairs repel.</p><div class="scroll"><div id="qkmap" class="fm"></div></div></section>
+    <section class="panel"><h3>W<sub>V</sub>W<sub>V</sub><sup>T</sup>: what passes</h3><p class="note">A clean diagonal means features pass unchanged. Off-diagonal colour means they blur into each other.</p><div class="scroll"><div id="ovmap" class="fm"></div></div></section>
   </div>
 
-  <section class="panel" style="margin-top:20px">
-    <h2>Experiments to try</h2>
+  <section class="tip">
+    <div class="k">Experiments to try</div>
     <ul class="how">
       <li>With the starting preset, tap the verb, open W<sub>V</sub> and hide <b>plural</b>. The verb can still find its subject, but it no longer learns whether the subject is plural.</li>
       <li>Set d<sub>head</sub> to 1 and train <i>Verb → its subject</i>. One dimension has to encode both "I am a verb" and "you are an early noun", and accuracy drops.</li>
@@ -172,6 +179,7 @@ ul.how{margin:10px 0 0;padding-left:1.2em;display:grid;gap:6px;font-size:15px}
     </ul>
     <p class="note" style="margin-top:10px">Toy model: embeddings are hand-set features plus a two-dimensional rotary-style position (angle = position × 1 rad); W<sub>O</sub> is tied to W<sub>V</sub><sup>T</sup> so output reads in the same feature terms. Sentences are generated from a 25-word vocabulary.</p>
   </section>
+  <footer style="margin-top:24px">Deep Culture (ERC), University of Amsterdam · <a href="https://github.com/goto4711/attention-microscope" style="color:var(--dc-purple)">Source on GitHub</a></footer>
 </div></main>
 
 <script>
@@ -273,7 +281,7 @@ function renderLens(){const s=CORPUS[si],x=embed(s)[focus],z=cur.Z[focus],o=cur.
   const m=Math.max(1,...x.map(Math.abs),...z.map(Math.abs),...o.map(Math.abs));
   const bar=(v,col)=>{const w=Math.min(50,Math.abs(v)/m*50);return`<div class="sb"><i style="background:var(${col});${v>=0?`left:50%;width:${w}%`:`right:50%;width:${w}%`}"></i></div>`};
   let h='<div class="lh">Feature</div><div class="lh">The word itself</div><div class="lh">What it attends to</div><div class="lh">What comes out</div><div class="lh" style="text-align:right">W<sub>V</sub> passes</div>';
-  F.forEach((f,i)=>{const pass=W.v[i].reduce((a,b)=>a+b*b,0);h+=`<div>${f}</div>${bar(x[i],'--mute')}${bar(z[i],'--hx')}${bar(o[i],'--eo')}<div class="pass">${pass<.003?'<span class="hid">hidden</span>':'×'+pass.toFixed(2)}</div>`});
+  F.forEach((f,i)=>{const pass=W.v[i].reduce((a,b)=>a+b*b,0);h+=`<div>${f}</div>${bar(x[i],'--dc-grey')}${bar(z[i],'--hx')}${bar(o[i],'--eo')}<div class="pass">${pass<.003?'<span class="hid">hidden</span>':'×'+pass.toFixed(2)}</div>`});
   $('lens').innerHTML=h;let top=0;A.forEach((a,j)=>{if(a>A[top])top=j});
   const vis=F.filter((_,i)=>Math.abs(o[i])>.15),blk=F.filter((_,i)=>Math.abs(z[i])>.15&&Math.abs(o[i])<.05);
   $('lenssum').innerHTML=`<b>${s[focus].w}</b> looks mostly at <b>${s[top].w}</b> (${Math.round(A[top]*100)}%). It receives <b>${vis.join(', ')||'nothing'}</b>${blk.length?`; present but invisible: <span class="hid">${blk.join(', ')}</span>`:''}.`;

@@ -4,6 +4,8 @@ An interactive toy attention head. A tiny language with eight readable features 
 
 **Live page:** https://goto4711.github.io/attention-microscope/
 
+Styled in the Deep Culture design; assets in `brand/` come from [goto4711/deep-culture-brand](https://github.com/goto4711/deep-culture-brand).
+
 ## What you can do
 
 - Tap a word to see where it attends, what features arrive from the words it attends to, and what survives W_V.
