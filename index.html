@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Attention microscope</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE everyday learning instrument: precise, calm, lab-like
+   IDEA a stained slide under a microscope: features are stains, W_Q, W_K, W_V are three lenses
+   PICTURE the specimen sentence with attention arcs from the focused token, beside the full attention grid
+   COLOUR white slide (darkfield at night), hematoxylin indigo for negatives and targets, eosin pink for positives and attention
+   TYPE Instrument Sans 600 + Instrument Sans
+   LAYOUT laptop: specimen and grid left, lens readout right; lenses beside training; maps below. Phone: one column */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#0c0c11);--ink:light-dark(#16141c,#ecebf2);--mute:light-dark(#5d5a68,#a3a1b0);--line:light-dark(#e2e0e8,#2b2a36);--panel:light-dark(#f6f5f9,#15151d);--hx:light-dark(#3f3cb4,#9d9aff);--eo:light-dark(#d6336f,#ff6f9f)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 'Instrument Sans',system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(20px,3vw,40px) max(4vw,16px)}
+.wrap{max-width:1240px;margin:0 auto}
+h1{font-size:clamp(32px,4.5vw,46px);line-height:1.05;letter-spacing:-.02em;margin:0 0 8px;font-weight:600;text-wrap:balance}
+h2{font-size:20px;line-height:1.2;margin:0 0 4px;font-weight:600}
+p{margin:0}
+.lede{color:var(--mute);max-width:64ch}
+.note{color:var(--mute);font-size:14px}
+.top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px 32px;align-items:end}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,select{font:inherit;font-size:15px;min-height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+button:hover,select:hover{border-color:var(--mute)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--hx);outline-offset:2px}
+button:disabled{opacity:.5;cursor:default}
+button.pri{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+button[aria-pressed=true]{background:var(--hx);color:#fff;border-color:var(--hx)}
+label.ck{display:inline-flex;gap:8px;align-items:center;min-height:44px;font-size:15px;white-space:nowrap}
+input[type=checkbox]{width:20px;height:20px;accent-color:var(--hx)}
+.grid2{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:20px;margin-top:20px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+.stage{background:radial-gradient(circle at 50% 55%,var(--bg) 0 58%,var(--panel) 100%)}
+.head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:baseline;margin-bottom:10px}
+.scroll{overflow-x:auto}
+#specwrap{margin:0 -6px}
+#spec{display:block;height:230px}
+#spec .chip{fill:var(--panel);stroke:var(--line);cursor:pointer}
+#spec .chip.on{fill:var(--ink);stroke:var(--ink)}
+#spec .w{fill:var(--ink);font-size:15px;font-weight:500;pointer-events:none}
+#spec .w.on{fill:var(--bg)}
+#spec .pc{fill:var(--mute);font-size:13px;font-variant-numeric:tabular-nums}
+#spec .pc.max{fill:var(--eo);font-weight:700}
+#spec .arc{fill:none;stroke:var(--eo);stroke-linecap:round}
+#spec .tg{fill:var(--hx)}
+.ag{display:grid;gap:3px;margin-top:14px}
+.ag .ch{font-size:13px;color:var(--mute);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-bottom:2px}
+.ag .rl{font-size:13px;min-height:38px;padding:0 6px;border:0;background:none;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-radius:6px}
+.ag .rl.on{background:var(--ink);color:var(--bg)}
+.ag .cell{min-height:38px;padding:0;border:0;border-radius:6px;font-size:13px;font-variant-numeric:tabular-nums}
+.ag .cell.t{box-shadow:inset 0 0 0 2.5px var(--hx)}
+.ag .cell.x{background:repeating-linear-gradient(45deg,var(--panel) 0 4px,var(--line) 4px 6px)!important;color:transparent}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--mute);margin-top:10px}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px}
+.lens{display:grid;grid-template-columns:6.6em repeat(3,minmax(0,1fr)) 4.4em;gap:6px 10px;align-items:center;font-size:14px}
+.lens .lh{font-size:13px;color:var(--mute);line-height:1.2;align-self:end}
+.sb{position:relative;height:18px;background:var(--bg);border-radius:4px;border:1px solid var(--line)}
+.sb::after{content:'';position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--mute);opacity:.5}
+.sb i{position:absolute;top:2px;bottom:2px;border-radius:3px}
+.pass{font-size:13px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hid{color:var(--hx);font-weight:600}
+#lenssum{margin-top:14px;font-size:15px}
+.tabs{display:flex;gap:6px;margin:10px 0}
+.tabs button{flex:1}
+.mat{display:grid;gap:3px;align-items:center}
+.mat .mh{font-size:13px;color:var(--mute);text-align:center}
+.mat .ml{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mat .mc{min-height:38px;padding:0;border:0;border-radius:6px;font-size:13px;font-variant-numeric:tabular-nums}
+.mat .mc.on{outline:2.5px solid var(--ink);outline-offset:1px}
+.seen{padding-left:6px}
+.sbar{display:block;height:8px;border-radius:4px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
+.sbar i{display:block;height:100%;background:var(--ink)}
+.edit{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;align-items:center;margin-top:12px}
+input[type=range]{width:100%;accent-color:var(--eo);height:44px}
+#cellinfo{font-size:14px;font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.chips button{min-height:40px;font-size:14px;padding:0 12px}
+.stat{font-size:14px;font-variant-numeric:tabular-nums;min-height:1.5em;margin-top:8px}
+.warn{color:var(--eo);font-size:14px;min-height:1.5em}
+.sec+.sec{border-top:1px solid var(--line);margin-top:18px;padding-top:18px}
+.maps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:20px}
+.fm{display:grid;grid-template-columns:3.4em repeat(8,minmax(0,1fr));gap:2px;margin-top:10px}
+.fm div{font-size:13px;text-align:center;min-height:30px;display:flex;align-items:center;justify-content:center;border-radius:4px;color:var(--mute)}
+.fm .r{justify-content:flex-end;padding-right:4px}
+ul.how{margin:10px 0 0;padding-left:1.2em;display:grid;gap:6px;font-size:15px}
+@media(max-width:860px){.grid2,.maps{grid-template-columns:minmax(0,1fr)}.top{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:420px){.lens{grid-template-columns:5.6em repeat(3,minmax(0,1fr)) 3.6em;gap:5px 6px}}
+</style></head><body>
+
+<header class="band"><div class="wrap top">
+  <div>
+    <h1>Attention microscope</h1>
+    <p class="lede">One attention head, a toy language and eight readable features. Set or train W<sub>Q</sub>, W<sub>K</sub> and W<sub>V</sub>, then watch which features each lens lets through and which it leaves invisible.</p>
+  </div>
+  <div class="bar">
+    <select id="preset" aria-label="Preset head"></select>
+    <label class="ck">d<sub>head</sub> <select id="dh" aria-label="Head dimension"></select></label>
+    <label class="ck"><input type="checkbox" id="causal"> Causal mask</label>
+  </div>
+</div></header>
+
+<main class="band" style="padding-top:0"><div class="wrap">
+  <div class="grid2">
+    <section class="panel stage">
+      <div class="head"><h2 id="foclabel">Specimen</h2>
+        <div class="bar"><button id="prevS" aria-label="Previous sentence">‹</button><button id="randS">New sentence</button><button id="nextS" aria-label="Next sentence">›</button></div></div>
+      <p class="note">Tap a word to put it under the lens. Arcs show where it sends its attention.</p>
+      <div id="specwrap" class="scroll"><svg id="spec" role="img" aria-label="Attention arcs from the focused word"></svg></div>
+      <div class="head" style="margin-top:6px"><h2>Attention grid</h2><button id="paint" aria-pressed="false">Paint targets</button></div>
+      <p class="note">Rows are queries, columns are keys. Outlined cells are the training target for the chosen rule.</p>
+      <div class="scroll"><div id="ag" class="ag"></div></div>
+      <div class="legend"><span><i style="background:var(--eo)"></i>attention weight</span><span><i style="box-shadow:inset 0 0 0 2.5px var(--hx)"></i>target</span><span><i style="background:repeating-linear-gradient(45deg,var(--panel) 0 4px,var(--line) 4px 6px)"></i>masked</span></div>
+    </section>
+
+    <section class="panel">
+      <h2>Through the lens</h2>
+      <p class="note">For the focused word: its own features, the mix of features in what it attends to, and what actually comes out after W<sub>V</sub> (read back with W<sub>V</sub><sup>T</sup>).</p>
+      <div id="lens" class="lens" style="margin-top:14px"></div>
+      <p id="lenssum"></p>
+    </section>
+  </div>
+
+  <div class="grid2">
+    <section class="panel">
+      <h2>The three lenses</h2>
+      <p class="note">Rows are input features, columns the head's dimensions. A row of zeros makes that feature invisible to the lens.</p>
+      <div class="tabs" role="tablist">
+        <button data-tab="q" role="tab">W<sub>Q</sub> looks for</button><button data-tab="k" role="tab">W<sub>K</sub> shows</button><button data-tab="v" role="tab">W<sub>V</sub> hands over</button>
+      </div>
+      <div class="scroll"><div id="mat" class="mat"></div></div>
+      <div class="edit">
+        <span id="cellinfo">Tap a cell to edit it.</span><span></span>
+        <input type="range" id="cellr" min="-4" max="4" step="0.1" value="0" disabled aria-label="Cell value">
+        <button id="blockrow" disabled>Hide feature</button>
+      </div>
+      <div class="bar" style="margin-top:8px"><button id="undo">Undo</button><button id="clearlens">Clear lens</button><button id="randlens">Randomize lens</button></div>
+    </section>
+
+    <section class="panel">
+      <div class="sec">
+        <h2>Train where to look</h2>
+        <p class="note">Gradient descent on W<sub>Q</sub> and W<sub>K</sub> only, using cross-entropy against the target attention across 60 sentences.</p>
+        <div class="bar" style="margin-top:10px"><select id="rule" aria-label="Target rule"></select><button id="trainqk" class="pri">Train W<sub>Q</sub>, W<sub>K</sub></button></div>
+        <p class="stat" id="qkstat"></p>
+      </div>
+      <div class="sec">
+        <h2>Train what to carry</h2>
+        <p class="note">Pick the features W<sub>V</sub> should pass from the attended words. Everything else should vanish.</p>
+        <div class="chips" id="vsel"></div>
+        <p class="warn" id="vwarn"></p>
+        <button id="trainv" class="pri">Train W<sub>V</sub></button>
+        <p class="stat" id="vstat"></p>
+      </div>
+    </section>
+  </div>
+
+  <div class="maps">
+    <section class="panel"><h2>W<sub>Q</sub>W<sub>K</sub><sup>T</sup>: who looks for whom</h2><p class="note">Row feature of the query × column feature of the key. Pink pairs attract, indigo pairs repel.</p><div class="scroll"><div id="qkmap" class="fm"></div></div></section>
+    <section class="panel"><h2>W<sub>V</sub>W<sub>V</sub><sup>T</sup>: what passes</h2><p class="note">A clean diagonal means features pass unchanged. Off-diagonal colour means they blur into each other.</p><div class="scroll"><div id="ovmap" class="fm"></div></div></section>
+  </div>
+
+  <section class="panel" style="margin-top:20px">
+    <h2>Experiments to try</h2>
+    <ul class="how">
+      <li>With the starting preset, tap the verb, open W<sub>V</sub> and hide <b>plural</b>. The verb can still find its subject, but it no longer learns whether the subject is plural.</li>
+      <li>Set d<sub>head</sub> to 1 and train <i>Verb → its subject</i>. One dimension has to encode both "I am a verb" and "you are an early noun", and accuracy drops.</li>
+      <li>Load the previous-token preset and hide both position rows in W<sub>K</sub>. Keys lose their position, and attention spreads out evenly.</li>
+      <li>Ask W<sub>V</sub> to carry six features with d<sub>head</sub> 4. They can't all fit, so W<sub>V</sub>W<sub>V</sub><sup>T</sup> stops being a clean diagonal: a small case of features competing for too few dimensions.</li>
+    </ul>
+    <p class="note" style="margin-top:10px">Toy model: embeddings are hand-set features plus a two-dimensional rotary-style position (angle = position × 1 rad); W<sub>O</sub> is tied to W<sub>V</sub><sup>T</sup> so output reads in the same feature terms. Sentences are generated from a 25-word vocabulary.</p>
+  </section>
+</div></main>
+
+<script>
+{
+const F=['noun','verb','adjective','determiner','animate','plural','pos cos','pos sin'];
+const FS=['N','V','Adj','Det','Anim','Pl','cos','sin'];
+const D=8,TH=1;
+let seed=11;const rnd=()=>(seed=seed*16807%2147483647)/2147483647;
+const pick=a=>a[Math.floor(rnd()*a.length)];
+const ANIM=[['cat','cats'],['dog','dogs'],['child','children'],['bird','birds']];
+const THING=[['ball','balls'],['box','boxes'],['kite','kites']];
+const ADJS=['big','small','red','old'],VERBS=['saw','chased','liked','found'];
+const tok=(w,type,anim,pl,role)=>({w,role,f:[type=='noun'?1:0,type=='verb'?1:0,type=='adj'?1:0,type=='det'?1:0,anim?1:0,pl?1:0]});
+const np=role=>{const anim=role=='subj'||rnd()<.5,pl=rnd()<.5;const out=[tok(pl?pick(['the','some']):pick(['the','a']),'det',0,0,'det')];if(rnd()<.5)out.push(tok(pick(ADJS),'adj',0,0,'adj'));out.push(tok(pick(anim?ANIM:THING)[pl?1:0],'noun',anim,pl,role));return out};
+const CORPUS=[];for(let i=0;i<60;i++)CORPUS.push([...np('subj'),tok(pick(VERBS),'verb',0,0,'verb'),...np('obj')]);
+const embed=s=>s.map((t,p)=>[...t.f,Math.cos(p*TH),Math.sin(p*TH)]);
+
+const zeros=(r,c)=>Array.from({length:r},()=>Array(c).fill(0));
+const mm=(A,B)=>A.map(r=>B[0].map((_,j)=>r.reduce((s,a,k)=>s+a*B[k][j],0)));
+const tr=A=>A[0].map((_,j)=>A.map(r=>r[j]));
+const add=(A,B)=>A.forEach((r,i)=>r.forEach((_,j)=>r[j]+=B[i][j]));
+const scale=(A,c)=>A.forEach(r=>r.forEach((_,j)=>r[j]*=c));
+
+const RULES={
+  subj:{name:'Verb → its subject',fn:s=>s.map(t=>t.role=='verb'?[s.findIndex(u=>u.role=='subj')]:null)},
+  adj:{name:'Adjective → its noun',fn:s=>s.map((t,i)=>t.role=='adj'?[s.findIndex((u,j)=>j>i&&u.f[0])]:null)},
+  prev:{name:'Each word → previous word',fn:s=>s.map((t,i)=>i?[i-1]:null)},
+  det:{name:'Noun → its determiner',fn:s=>s.map((t,i)=>{if(!t.f[0])return null;let j=i;while(j>=0&&!s[j].f[3])j--;return[j]})},
+  anim:{name:'Every word → animate nouns',fn:s=>s.map(()=>s.map((u,j)=>u.f[0]&&u.f[4]?j:-1).filter(j=>j>=0))},
+  paint:{name:'Painted on this sentence',fn:null}
+};
+const c1=Math.cos(TH),s1=Math.sin(TH);
+const PRESETS={
+  agree:{name:'Verb finds subject, reads its number',q:[[1,0,3],[1,1,3]],k:[[0,0,2],[4,0,1],[7,1,2]],v:[[5,0,1],[0,1,1]],rule:'subj',vsel:[5]},
+  prev:{name:'Previous-word head',q:[[6,0,3*c1],[7,0,3*s1],[6,1,-3*s1],[7,1,3*c1]],k:[[6,0,3],[7,1,3]],v:[[0,0,1],[1,1,1],[2,2,1],[3,3,1]],rule:'prev',vsel:[0,1,2,3]},
+  nouns:{name:'Everyone looks at nouns',q:[[0,0,2],[1,0,2],[2,0,2],[3,0,2]],k:[[0,0,2]],v:[[4,0,1],[5,1,1]],rule:'anim',vsel:[4,5]},
+  blank:{name:'Blank lenses',q:[],k:[],v:[],rule:'subj',vsel:[5]}
+};
+
+let dh=4,causal=false,si=0,focus=0,rule='subj',tab='v',sel=null,paintMode=false,cur=null,training=false;
+const vSel=new Set([5]),painted={},stats={qk:'',v:''},hist=[];
+let W={q:zeros(D,dh),k:zeros(D,dh),v:zeros(D,dh)};
+const $=id=>document.getElementById(id);
+const snap=()=>{hist.push(JSON.stringify({W,dh,causal,rule,v:[...vSel]}));if(hist.length>60)hist.shift()};
+const verbIdx=()=>CORPUS[si].findIndex(t=>t.role=='verb');
+
+function fwd(X){const c=1/Math.sqrt(dh);const Q=mm(X,W.q),K=mm(X,W.k),V=mm(X,W.v);
+  const S=Q.map((q,i)=>K.map((k,j)=>causal&&j>i?-Infinity:c*q.reduce((s,a,d)=>s+a*k[d],0)));
+  const A=S.map(r=>{const m=Math.max(...r);const e=r.map(x=>x==-Infinity?0:Math.exp(x-m));const z=e.reduce((a,b)=>a+b,0);return e.map(x=>x/z)});
+  return{Q,K,V,A,c,Z:mm(A,X),O:mm(mm(A,V),tr(W.v))}}
+
+function tgt(idx){const s=CORPUS[idx];const raw=rule=='paint'?(painted[idx]||s.map(()=>null)):RULES[rule].fn(s);
+  return raw.map((r,i)=>{if(!r)return null;const ok=r.filter(j=>j>=0&&(!causal||j<=i));if(!ok.length)return null;const row=Array(s.length).fill(0);ok.forEach(j=>row[j]=1/ok.length);return row})}
+
+function adam(st,key,G,lr=.05){if(!st[key])st[key]={m:zeros(D,dh),v:zeros(D,dh),t:0};const o=st[key],t=++o.t,P=W[key];
+  for(let i=0;i<D;i++)for(let d=0;d<dh;d++){const g=G[i][d];o.m[i][d]=.9*o.m[i][d]+.1*g;o.v[i][d]=.999*o.v[i][d]+.001*g*g;
+    const mh=o.m[i][d]/(1-.9**t),vh=o.v[i][d]/(1-.999**t);P[i][d]=Math.max(-6,Math.min(6,P[i][d]-lr*mh/(Math.sqrt(vh)+1e-8)))}}
+const jitter=key=>{if(W[key].flat().reduce((s,x)=>s+x*x,0)<1e-4)W[key]=W[key].map(r=>r.map(()=>(Math.random()-.5)*.6))};
+
+function stepQK(st){const idxs=rule=='paint'?[si]:CORPUS.map((_,i)=>i);const gq=zeros(D,dh),gk=zeros(D,dh);let L=0,rows=0,hits=0;
+  for(const idx of idxs){const X=embed(CORPUS[idx]),Tg=tgt(idx);if(!Tg.some(r=>r))continue;const f=fwd(X),n=X.length,dS=zeros(n,n);
+    Tg.forEach((t,i)=>{if(!t)return;rows++;let b=0;for(let j=0;j<n;j++){dS[i][j]=f.A[i][j]-t[j];if(t[j]>0)L-=t[j]*Math.log(f.A[i][j]+1e-9);if(f.A[i][j]>f.A[i][b])b=j}if(t[b]>0)hits++});
+    const gQ=mm(dS,f.K),gK=mm(tr(dS),f.Q);scale(gQ,f.c);scale(gK,f.c);const XT=tr(X);add(gq,mm(XT,gQ));add(gk,mm(XT,gK))}
+  if(!rows)return null;scale(gq,1/rows);scale(gk,1/rows);adam(st,'q',gq);adam(st,'k',gk);return{L:L/rows,hit:hits/rows}}
+
+function stepV(st){const P=F.map((_,f)=>vSel.has(f)?1:0),g=zeros(D,dh);let L=0,N=0;
+  for(const s of CORPUS){const Z=fwd(embed(s)).Z,ZW=mm(Z,W.v);const E=mm(ZW,tr(W.v)).map((r,i)=>r.map((x,j)=>x-Z[i][j]*P[j]));
+    E.forEach(r=>r.forEach(x=>L+=x*x));N+=Z.length;add(g,mm(mm(tr(Z),E),W.v));add(g,mm(tr(E),ZW))}
+  scale(g,2/N);adam(st,'v',g);return{L:L/N}}
+
+function train(kind){if(training)return;snap();const st={};jitter(kind=='qk'?'q':'v');if(kind=='qk')jitter('k');training=true;let step=0;const N=360;
+  const tick=()=>{let r;for(let i=0;i<6&&step<N;i++,step++){r=kind=='qk'?stepQK(st):stepV(st);if(!r)break}
+    if(!r){training=false;stats.qk='No target rows. Pick a rule, or paint some cells on this sentence.';render();return}
+    stats[kind]=kind=='qk'?`Step ${step} · loss ${r.L.toFixed(3)} · ${Math.round(r.hit*100)}% of target rows hit`:`Step ${step} · reconstruction error ${r.L.toFixed(4)}`;
+    if(step>=N)training=false;render();if(step<N)requestAnimationFrame(tick)};
+  requestAnimationFrame(tick)}
+
+const div=(x,s)=>{const p=Math.min(100,Math.abs(x)/s*100)*.92;return`color-mix(in srgb,var(${x>=0?'--eo':'--hx'}) ${p}%,var(--bg))`};
+const fg=(x,s)=>Math.abs(x)/s>.55?'#fff':'var(--ink)';
+
+function drawSpec(){const svg=$('spec'),s=CORPUS[si],n=s.length,A=cur.A[focus],Tg=tgt(si)[focus];
+  const Wd=Math.max($('specwrap').clientWidth,n*70),H=230,cw=(Wd-12)/n,x=j=>6+cw*(j+.5),cy=H-78,yb=cy-6,av=yb-14;
+  svg.setAttribute('width',Wd);svg.style.width=Wd+'px';svg.setAttribute('viewBox',`0 0 ${Wd} ${H}`);
+  let mx=0;A.forEach((a,j)=>{if(a>A[mx])mx=j});let h='';
+  A.forEach((a,j)=>{if(a<.02)return;const sw=(1.5+10*a).toFixed(1),op=(.25+.75*a).toFixed(2);
+    if(j==focus){const X=x(j);h+=`<path class="arc" d="M${X-9},${yb} C${X-30},${yb-56} ${X+30},${yb-56} ${X+9},${yb}" stroke-width="${sw}" opacity="${op}"/>`;return}
+    const ht=Math.min(av,30+Math.abs(j-focus)*(av-30)/Math.max(1,n-1))*1.33;h+=`<path class="arc" d="M${x(focus)},${yb} C${x(focus)},${yb-ht} ${x(j)},${yb-ht} ${x(j)},${yb}" stroke-width="${sw}" opacity="${op}"/>`});
+  s.forEach((t,j)=>{const on=j==focus?' on':'';h+=`<rect class="chip${on}" data-j="${j}" x="${x(j)-cw/2+4}" y="${cy}" width="${cw-8}" height="36" rx="9"/><text class="w${on}" x="${x(j)}" y="${cy+23}" text-anchor="middle">${t.w}</text>`;
+    if(Tg&&Tg[j]>0)h+=`<rect class="tg" x="${x(j)-cw/2+14}" y="${cy+40}" width="${cw-28}" height="4" rx="2"/>`;
+    h+=`<text class="pc${j==mx?' max':''}" x="${x(j)}" y="${cy+64}" text-anchor="middle">${Math.round(A[j]*100)}%</text>`});
+  svg.innerHTML=h}
+
+function renderGrid(){const s=CORPUS[si],n=s.length,g=$('ag'),Ts=tgt(si);g.style.gridTemplateColumns=`5.2em repeat(${n},minmax(30px,1fr))`;g.style.minWidth=(84+n*34)+'px';
+  let h='<div></div>'+s.map(t=>`<div class="ch" title="${t.w}">${t.w}</div>`).join('');
+  cur.A.forEach((r,i)=>{h+=`<button class="rl${i==focus?' on':''}" data-i="${i}">${s[i].w}</button>`+r.map((a,j)=>`<button class="cell${Ts[i]&&Ts[i][j]>0?' t':''}${causal&&j>i?' x':''}" data-i="${i}" data-j="${j}" style="background:${div(a,1)};color:${fg(a,1)}" aria-label="${s[i].w} to ${s[j].w}">${Math.round(a*100)}</button>`).join('')});
+  g.innerHTML=h}
+
+function renderLens(){const s=CORPUS[si],x=embed(s)[focus],z=cur.Z[focus],o=cur.O[focus],A=cur.A[focus];
+  const m=Math.max(1,...x.map(Math.abs),...z.map(Math.abs),...o.map(Math.abs));
+  const bar=(v,col)=>{const w=Math.min(50,Math.abs(v)/m*50);return`<div class="sb"><i style="background:var(${col});${v>=0?`left:50%;width:${w}%`:`right:50%;width:${w}%`}"></i></div>`};
+  let h='<div class="lh">Feature</div><div class="lh">The word itself</div><div class="lh">What it attends to</div><div class="lh">What comes out</div><div class="lh" style="text-align:right">W<sub>V</sub> passes</div>';
+  F.forEach((f,i)=>{const pass=W.v[i].reduce((a,b)=>a+b*b,0);h+=`<div>${f}</div>${bar(x[i],'--mute')}${bar(z[i],'--hx')}${bar(o[i],'--eo')}<div class="pass">${pass<.003?'<span class="hid">hidden</span>':'×'+pass.toFixed(2)}</div>`});
+  $('lens').innerHTML=h;let top=0;A.forEach((a,j)=>{if(a>A[top])top=j});
+  const vis=F.filter((_,i)=>Math.abs(o[i])>.15),blk=F.filter((_,i)=>Math.abs(z[i])>.15&&Math.abs(o[i])<.05);
+  $('lenssum').innerHTML=`<b>${s[focus].w}</b> looks mostly at <b>${s[top].w}</b> (${Math.round(A[top]*100)}%). It receives <b>${vis.join(', ')||'nothing'}</b>${blk.length?`; present but invisible: <span class="hid">${blk.join(', ')}</span>`:''}.`;
+  $('foclabel').textContent=`Attention from “${s[focus].w}”`}
+
+function renderEditor(){const M=W[tab];document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tab==tab));
+  const g=$('mat');g.style.gridTemplateColumns=`6.4em repeat(${dh},minmax(34px,1fr)) 4.6em`;g.style.minWidth=(176+dh*37)+'px';
+  let h='<div></div>'+M[0].map((_,d)=>`<div class="mh">d${d+1}</div>`).join('')+'<div class="mh">seen</div>';
+  F.forEach((name,f)=>{const nr=Math.hypot(...M[f]);h+=`<div class="ml">${name}</div>`+M[f].map((x,d)=>`<button class="mc${sel&&sel[0]==f&&sel[1]==d?' on':''}" data-f="${f}" data-d="${d}" style="background:${div(x,3)};color:${fg(x,3)}">${x.toFixed(1)}</button>`).join('')+`<div class="seen">${nr<.05?'<span class="hid">hidden</span>':`<span class="sbar"><i style="width:${Math.min(100,nr/4*100)}%"></i></span>`}</div>`});
+  g.innerHTML=h;const r=$('cellr');
+  if(sel&&sel[1]<dh){const v=M[sel[0]][sel[1]];$('cellinfo').textContent=`W_${tab.toUpperCase()}[${F[sel[0]]}, d${sel[1]+1}] = ${v.toFixed(2)}`;r.disabled=false;if(document.activeElement!==r)r.value=v;$('blockrow').disabled=false}
+  else{$('cellinfo').textContent='Tap a cell to edit it.';r.disabled=true;$('blockrow').disabled=true}}
+
+function fmap(el,M){const m=Math.max(.5,...M.flat().map(Math.abs));let h='<div></div>'+FS.map(f=>`<div>${f}</div>`).join('');
+  M.forEach((r,i)=>{h+=`<div class="r">${FS[i]}</div>`+r.map(x=>`<div style="background:${div(x,m)}" title="${x.toFixed(2)}"></div>`).join('')});el.innerHTML=h;el.style.minWidth='300px'}
+
+function render(){const s=CORPUS[si];if(focus>=s.length)focus=verbIdx();cur=fwd(embed(s));drawSpec();renderGrid();renderLens();renderEditor();
+  fmap($('qkmap'),mm(W.q,tr(W.k)).map(r=>r.map(x=>x/Math.sqrt(dh))));fmap($('ovmap'),mm(W.v,tr(W.v)));
+  $('qkstat').textContent=stats.qk;$('vstat').textContent=stats.v;$('dh').value=dh;$('causal').checked=causal;$('rule').value=rule;$('paint').setAttribute('aria-pressed',paintMode);
+  $('vsel').innerHTML=F.map((f,i)=>`<button data-f="${i}" aria-pressed="${vSel.has(i)}">${f}</button>`).join('');
+  $('vwarn').textContent=vSel.size>dh?`${vSel.size} features through ${dh} dimension${dh>1?'s':''}: they will have to share space and blur.`:'';
+  $('trainqk').disabled=$('trainv').disabled=training}
+
+function resize(n){for(const k of['q','k','v'])W[k]=W[k].map(r=>Array.from({length:n},(_,d)=>r[d]||0));dh=n;if(sel&&sel[1]>=n)sel=null}
+function preset(key){const p=PRESETS[key];snap();if(dh<4)resize(4);for(const k of['q','k','v']){W[k]=zeros(D,dh);p[k].forEach(([f,d,x])=>W[k][f][d]=x)}
+  causal=false;rule=p.rule;vSel.clear();p.vsel.forEach(f=>vSel.add(f));stats.qk=stats.v='';if(key=='prev')focus=Math.min(4,CORPUS[si].length-1);else focus=verbIdx();render()}
+
+$('preset').innerHTML='<option value="">Load a preset…</option>'+Object.entries(PRESETS).map(([k,p])=>`<option value="${k}">${p.name}</option>`).join('');
+$('dh').innerHTML=[1,2,3,4,5,6,7,8].map(n=>`<option>${n}</option>`).join('');
+$('rule').innerHTML=Object.entries(RULES).map(([k,r])=>`<option value="${k}">${r.name}</option>`).join('');
+$('preset').onchange=e=>{if(e.target.value)preset(e.target.value);e.target.value=''};
+$('dh').onchange=e=>{snap();resize(+e.target.value);render()};
+$('causal').onchange=e=>{causal=e.target.checked;render()};
+$('rule').onchange=e=>{rule=e.target.value;render()};
+const goS=k=>{si=(k+CORPUS.length)%CORPUS.length;focus=verbIdx();render()};
+$('prevS').onclick=()=>goS(si-1);$('nextS').onclick=()=>goS(si+1);$('randS').onclick=()=>goS(Math.floor(Math.random()*CORPUS.length));
+$('spec').addEventListener('click',e=>{const j=e.target.dataset.j;if(j!=null){focus=+j;render()}});
+$('paint').onclick=()=>{paintMode=!paintMode;render()};
+$('ag').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const i=+b.dataset.i;
+  if(paintMode&&b.dataset.j!=null){const j=+b.dataset.j,s=CORPUS[si];const P=painted[si]||(painted[si]=s.map(()=>null));const row=new Set(P[i]||[]);row.has(j)?row.delete(j):row.add(j);P[i]=row.size?[...row]:null;rule='paint'}
+  focus=i;render()});
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render()});
+$('mat').addEventListener('click',e=>{const b=e.target.closest('.mc');if(!b)return;snap();sel=[+b.dataset.f,+b.dataset.d];render()});
+$('cellr').addEventListener('input',e=>{if(!sel)return;W[tab][sel[0]][sel[1]]=+e.target.value;render()});
+$('blockrow').onclick=()=>{if(!sel)return;snap();W[tab][sel[0]]=W[tab][sel[0]].map(()=>0);render()};
+$('clearlens').onclick=()=>{snap();W[tab]=zeros(D,dh);render()};
+$('randlens').onclick=()=>{snap();W[tab]=zeros(D,dh).map(r=>r.map(()=>(Math.random()-.5)*4));render()};
+$('undo').onclick=()=>{const h=hist.pop();if(!h)return;const o=JSON.parse(h);W=o.W;dh=o.dh;causal=o.causal;rule=o.rule;vSel.clear();o.v.forEach(f=>vSel.add(f));sel=null;render()};
+$('vsel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const f=+b.dataset.f;vSel.has(f)?vSel.delete(f):vSel.add(f);render()});
+$('trainqk').onclick=()=>train('qk');$('trainv').onclick=()=>train('v');
+
+si=Math.max(0,CORPUS.findIndex(s=>s.find(t=>t.role=='subj').f[5]&&s.some(t=>t.role=='adj')));
+preset('agree');hist.length=0;
+const ro=new ResizeObserver(()=>cur&&drawSpec());ro.observe($('specwrap'));
+}
+</script>
+</body></html>
