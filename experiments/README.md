@@ -19,6 +19,7 @@ experiments/
     features.py        step 2: word-level feature labels + annotation sheets
     extract.py         step 1: per-head W_Q/W_K/W_V/W_O, residual stream, attention
     probe.py           step 3: linear probes per layer, cross-variety transfer
+    annotation_xlsx.py Excel workbooks for hand annotation, and import of the labels
   out/                 (gitignored) arrays: weights, activations, attention, probe directions
 data/                  (gitignored) raw corpora, derived text, annotation sheets, HF cache
 specimens/             shareable derived outputs only (JSON, no restricted corpus text)
@@ -60,6 +61,14 @@ Label sources are recorded per word (`spacy`, `rule`, `gold`):
 - **gold**: `features.py` writes sheets to `data/annotation/<variety>_<feature>.csv`
   (balanced rule positives, rule negatives and unlabelled content words). Fill `gold`
   with `1`, `0` or `x` (not a candidate) and re-run; gold overrides the automatic label.
+- **Workbooks for annotators**: `python experiments/bible/annotation_xlsx.py export` turns
+  the sheets into `data/annotation/annotate_jnt.xlsx` (all JNT rows, with the WEB verse
+  for orientation) and `annotate_web.xlsx` (100 rows per feature, to measure spaCy). Each
+  has an Instructions tab, a yes/no/skip drop-down and a progress count. The automatic
+  label is hidden so the annotation is blind. Read the labels back with
+  `python experiments/bible/annotation_xlsx.py import data/annotation/annotate_jnt.xlsx`,
+  then re-run `run.sh`. The JNT workbook contains copyrighted verse text: share it only
+  with collaborators, never publicly.
 
 ## Outputs of step 1 and 3
 
