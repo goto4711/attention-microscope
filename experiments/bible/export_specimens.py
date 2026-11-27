@@ -9,8 +9,12 @@ Contents:
             the projection onto the step-3 probe direction, scaled so that +1 is the mean of
             positive words and -1 the mean of negative words at that layer
   heads     the selected heads ([layer, head, why])
-  maps      per feature and variety, [L][H] grids: marker attention, head decoding,
+  maps      per feature and variety, [L][H] grids: marker attention, marker attention beyond
+            what the head gives any word at that distance ("excess"), head decoding,
             visibility through W_Q, W_K, W_V
+  prevword  per variety, [L][H] attention to the word directly before (any word)
+  controls  ablation of generic previous-word heads (step 5) and the respelled JNT
+            (orthography control): probe accuracy and marker-head ablation
   probes    per feature and variety, probe accuracy by layer and transfer AUC
   ablation  per feature and variety, the step-4 ablation runs
 
@@ -49,35 +53,80 @@ def main():
     P = dict(np.load(out / "probes.npz"))
     readout = heads_json["readout_layer"]
 
-    # --- heads: top marker-attention heads, then top decoding heads ----------
+    rows = {v: read_jsonl(DERIVED / f"sample_{v}.jsonl") for v in VARIETIES}
+    attn = {v: np.load(out / f"attn_{v}.npz") for v in VARIETIES}
+    acts = {v: np.load(out / f"acts_{v}.npz") for v in VARIETIES}
+    n_attn = min(len([k for k in attn[v].files if k.startswith("a")]) for v in VARIETIES)
+    ctrl_path = Path(f"specimens/bible-pair_{a.model}_controls.json")
+    orth_path = Path(f"specimens/bible-pair_{a.model}_orthography.json")
+    controls = json.loads(ctrl_path.read_text()) if ctrl_path.exists() else {}
+    orth = json.loads(orth_path.read_text()) if orth_path.exists() else {}
+
+    # --- generic attention by distance (1-4 words back), from the saved word-level attention
+    gen = {}
+    for v in VARIETIES:
+        acc, cnt = np.zeros((5, L, H)), np.zeros(5)
+        for i in range(n_attn):
+            A = attn[v][f"a{i}"].astype(np.float32)  # [L, H, W, W]
+            for q in range(A.shape[2]):
+                for k in range(1, 5):
+                    if q - k >= 0:
+                        acc[k] += A[:, :, q, q - k]
+                        cnt[k] += 1
+        gen[v] = acc / np.maximum(cnt, 1)[:, None, None]
+    prev = (gen["web"][1] + gen["jnt"][1]) / 2
+    prev_rank = np.zeros((L, H), int)
+    prev_rank.ravel()[np.argsort(-prev.ravel())] = np.arange(1, L * H + 1)
+
+    # marker attention beyond what the head gives any word at the same distance
+    excess = {}
+    for f in FEATURES:
+        for v in VARIETIES:
+            m = hz.get(f"marker_{f}_{v}")
+            off = controls.get("dynamic", {}).get("offset", {}).get(f"{f}_{v}", {}).get("offsets")
+            if m is None or not off:
+                continue
+            n = sum(off.values())
+            expect = sum(c * gen[v][int(k)] for k, c in off.items() if int(k) < 5) / n
+            excess[f"{f}_{v}"] = (m - expect, expect)
+
+    # --- heads: marker attention, attention beyond the previous-word habit, decoding
     chosen, why = [], {}
     def add(l, h, reason):
         if (l, h) not in why and len(chosen) < a.heads:
             chosen.append((l, h))
-            why[(l, h)] = reason
+            why[(l, h)] = [reason]
         elif (l, h) in why and reason not in why[(l, h)]:
-            why[(l, h)] += "; " + reason
+            why[(l, h)].append(reason)
     for rank in range(3):
         for f in FEATURES:
             for v in VARIETIES:
                 m = hz.get(f"marker_{f}_{v}")
                 if m is not None:
-                    idx = np.argsort(-m[:readout].ravel())[rank]
-                    add(*divmod(int(idx), H), f"attends to the {f} marker ({v.upper()})")
+                    l, h = divmod(int(np.argsort(-m[:readout].ravel())[rank]), H)
+                    add(l, h, f"{round(m[l, h] * 100)}% to the {f} marker in {v.upper()}")
+    for f in FEATURES:
+        for v in VARIETIES:
+            if f"{f}_{v}" in excess:
+                ex, _ = excess[f"{f}_{v}"]
+                l, h = divmod(int(np.argsort(-ex[:readout].ravel())[0]), H)
+                add(l, h, f"{round(hz[f'marker_{f}_{v}'][l, h] * 100)}% to the {f} marker in {v.upper()}")
     for rank in range(2):
-        for f in FEATURES:
-            for v in VARIETIES:
-                d = hz.get(f"decode_{f}_{v}")
-                if d is not None and np.isfinite(d).any():
-                    idx = np.argsort(-np.nan_to_num(d[:readout], nan=-1).ravel())[rank]
-                    add(*divmod(int(idx), H), f"output carries {f} ({v.upper()})")
+        l, h = divmod(int(np.argsort(-prev[:readout].ravel())[rank]), H)
+        add(l, h, "previous-word head")
+    for f in FEATURES:
+        for v in VARIETIES:
+            d = hz.get(f"decode_{f}_{v}")
+            if d is not None and np.isfinite(d).any():
+                l, h = divmod(int(np.argsort(-np.nan_to_num(d[:readout], nan=-1).ravel())[0]), H)
+                add(l, h, f"output carries {f} ({v.upper()})")
     chosen.sort()
-
-    # --- verse pairs ----------------------------------------------------------
-    rows = {v: read_jsonl(DERIVED / f"sample_{v}.jsonl") for v in VARIETIES}
-    attn = {v: np.load(out / f"attn_{v}.npz") for v in VARIETIES}
-    acts = {v: np.load(out / f"acts_{v}.npz") for v in VARIETIES}
-    n_attn = min(len([k for k in attn[v].files if k.startswith("a")]) for v in VARIETIES)
+    def describe(l, h):
+        parts = why[(l, h)]
+        g = round(prev[l, h] * 100)
+        lead = (f"generic previous-word head (rank {prev_rank[l, h]} of {L * H})"
+                if prev_rank[l, h] <= 12 else "not a previous-word head")
+        return lead + "; " + "; ".join(p for p in parts if p != "previous-word head")
 
     # readout scaling per (feature, variety, layer) from all labelled words
     scale = {}
@@ -137,6 +186,8 @@ def main():
                             ("visQ", f"visQ_{key}"), ("visK", f"visK_{key}"), ("visV", f"visV_{key}")):
                 if k in hz and np.isfinite(hz[k]).any():
                     m[name] = r2(np.nan_to_num(hz[k], nan=0), 3 if name == "marker" else 2)
+            if key in excess:
+                m["excess"] = r2(excess[key][0], 3)
             maps[key] = m
             pj = probes_json["features"][f][v]
             probes[key] = {k: pj[k] for k in pj if k in ("acc", "n_pos", "n_neg", "label_sources")
@@ -149,7 +200,13 @@ def main():
             "label_note": "Labels are automatic (spaCy for WEB, rules for JNT) until hand annotation is in.",
             "credit": "Jamaican New Testament © 2012 Bible Society of the West Indies; "
                       "World English Bible, public domain (ebible.org).",
-            "heads": [[l, h, why[(l, h)]] for l, h in chosen],
+            "heads": [[l, h, describe(l, h).rstrip("; ")] for l, h in chosen],
+            "prevword": {v: r2(gen[v][1], 3) for v in VARIETIES}, "prev_rank": prev_rank.tolist(),
+            "prev_ablation": controls.get("dynamic", {}).get("prev_ablation", {}),
+            "orthography": {"tokenisation": orth.get("tokenisation", {}),
+                            "features": {f: {k: v for k, v in e.items()
+                                             if k in ("acc_jntr", "ablation")}
+                                         for f, e in orth.get("features", {}).items()}},
             "pairs": pairs, "maps": maps, "probes": probes, "ablation": ablation,
             "cosine": {f: probes_json["features"][f].get("cosine_web_jnt") for f in FEATURES}}
     js = "window.REAL_SPECIMENS=" + json.dumps(data, ensure_ascii=False, separators=(",", ":")) + ";\n"

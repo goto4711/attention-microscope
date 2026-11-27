@@ -124,6 +124,16 @@ footer{color:var(--mute);font-size:13px;font-weight:300}
 .ab .t i{position:absolute;top:2px;bottom:2px;left:0;border-radius:2px}
 .ab .t b{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink)}
 .ab .n{font-variant-numeric:tabular-nums;text-align:right;font-size:13px}
+.abt{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px;font-variant-numeric:tabular-nums}
+.abt caption{text-align:left;font-weight:500;color:var(--dc-purple);font-size:15px;padding-bottom:4px}
+.abt th{font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--dc-purple);text-align:center;padding:2px 4px}
+.abt tbody th{text-align:left;text-transform:none;letter-spacing:0;font-size:13px;font-weight:400;color:var(--ink);white-space:nowrap}
+.abt td{padding:3px 4px}
+.abt .cb{display:block;position:relative;padding:2px 4px;text-align:right;background:var(--dc-paper-2);border-radius:3px;border:1px solid var(--line);overflow:hidden}
+.abt .cb i{position:absolute;left:0;top:0;bottom:0;background:var(--c)}
+.abt .cb span{position:relative}
+.abt tr.web{--c:color-mix(in srgb,var(--dc-blue) 30%,#fff)}.abt tr.jnt{--c:color-mix(in srgb,var(--dc-purple) 30%,#fff)}
+.abt tr.rs th{font-style:italic}
 .kv{display:grid;grid-template-columns:7.2em repeat(3,minmax(0,1fr)) 4.4em;gap:6px 10px;align-items:center;font-size:14px}
 .kv .lh{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--dc-purple);line-height:1.25}
 .vb{position:relative;height:14px;background:var(--dc-paper-2);border:1px solid var(--line);border-radius:3px}
@@ -440,7 +450,7 @@ $('modesw').hidden=false;
 const FT={plural:'pl',past:'past',progressive:'prog'};
 const VN={web:'Standard English',jnt:'Jamaican Creole'};
 const VC={web:'--dc-blue',jnt:'--dc-purple'};
-const METRICS={marker:'Attention to the marker',decode:'Feature decodable from head output',visV:'W_V visibility',visQ:'W_Q visibility',visK:'W_K visibility'};
+const METRICS={marker:'Attention to the marker',excess:'Marker attention beyond the previous-word habit',prev:'Attention to the previous word (any word)',decode:'Feature decodable from head output',visV:'W_V visibility',visQ:'W_Q visibility',visK:'W_K visibility'};
 let pi=0,va='jnt',hk=0,focus=0,feat='past',metric='marker';
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const col=(x,m,c)=>`color-mix(in srgb,var(${c}) ${Math.max(0,Math.min(100,x/m*100))*.92}%,#fff)`;
@@ -497,37 +507,56 @@ function renderLens(){const p=P(),rd=p.readout[focus],[L,Hh]=head();
   $('rkv').innerHTML=k;
   const A=p.attn[hk][focus];let top=0;A.forEach((a,j)=>{if(a>A[top])top=j});
   const sink=100-A.reduce((s,a)=>s+a,0);
-  const mk=R.maps[feat+'_'+va]&&R.maps[feat+'_'+va].marker;
-  $('rsum').innerHTML=`Head ${L}.${Hh}: <b>${esc(p.words[focus])}</b> looks mostly at <b>${esc(p.words[top])}</b> (${A[top]}%)`+(sink>20?`, and sends ${sink}% to the start token`:'')+'.'+
-    (mk?` Across the sample, this head puts ${Math.round(mk[L][Hh]*100)}% of a ${VN[va]} ${feat} word's attention on its marker.`:'');
+  const mm=R.maps[feat+'_'+va]||{},mk=mm.marker,ex=mm.excess,pw=R.prevword[va][L][Hh];
+  let t=`Head ${L}.${Hh}: <b>${esc(p.words[focus])}</b> looks mostly at <b>${esc(p.words[top])}</b> (${A[top]}%)`+(sink>20?`, and sends ${sink}% to the start token`:'')+'. ';
+  t+=`In general it gives ${Math.round(pw*100)}% of a word's attention to the word just before`+(R.prev_rank[L][Hh]<=12?`: one of the model's generic previous-word heads (rank ${R.prev_rank[L][Hh]} of ${R.n_layers*R.n_heads}).`:'.');
+  if(mk){const m=Math.round(mk[L][Hh]*100),e=ex?Math.round(ex[L][Hh]*100):null;
+    t+=` On ${VN[va]} ${feat} words it gives ${m}% to the marker`+(e==null?'.':e>=10?`, ${e} points more than it gives any word at that distance: it singles out the marker.`:e<=-10?`, less than it gives any word at that distance.`:`, about what it gives any word at that distance: it does not single out the marker.`)}
+  $('rsum').innerHTML=t;
   $('rwhy').textContent=`Layer ${L}, head ${Hh}: ${head()[2]}.`}
 
-function heat(el,key){const m=(R.maps[key]||{})[metric];if(!m){el.innerHTML='<p class="note">Not available for this feature.</p>';el.style.gridTemplateColumns='1fr';return 0}
+function heat(el,key){const v_=key.split('_')[1];const m=metric=='prev'?R.prevword[v_]:(R.maps[key]||{})[metric];
+  if(!m){el.innerHTML='<p class="note">Not available for this feature.</p>';el.style.gridTemplateColumns='1fr';return 0}
   el.style.gridTemplateColumns=`repeat(${R.n_heads},minmax(0,1fr))`;
-  const isVis=metric.startsWith('vis'),lo=metric=='decode'?.5:0,mx=isVis?3:Math.max(...m.flat(),.01);
+  const isVis=metric.startsWith('vis'),div=metric=='excess',lo=metric=='decode'?.5:0;
+  const mx=isVis?3:div?Math.max(...m.flat().map(Math.abs),.01):Math.max(...m.flat(),.01);
   const sel=new Set(R.heads.map(([l,h])=>l+'.'+h)),[cl,ch]=head();
-  el.innerHTML=m.map((r,l)=>r.map((v,h)=>`<div class="${sel.has(l+'.'+h)?'sel':''}${l==cl&&h==ch?' cur':''}" data-l="${l}" data-h="${h}" title="layer ${l}, head ${h}: ${v}" style="background:${col(v-lo,mx-lo,key.endsWith('web')?'--dc-blue':'--dc-purple')}"></div>`).join('')).join('');
+  const c=v=>div?col(Math.abs(v),mx,v>=0?(v_=='web'?'--dc-blue':'--dc-purple'):'--dc-grey'):col(v-lo,mx-lo,v_=='web'?'--dc-blue':'--dc-purple');
+  el.innerHTML=m.map((r,l)=>r.map((v,h)=>`<div class="${sel.has(l+'.'+h)?'sel':''}${l==cl&&h==ch?' cur':''}" data-l="${l}" data-h="${h}" title="layer ${l}, head ${h}: ${v}" style="background:${c(v)}"></div>`).join('')).join('');
   return mx}
 
 function renderMaps(){const mw=heat($('hmweb'),feat+'_web'),mj=heat($('hmjnt'),feat+'_jnt');
   const isVis=metric.startsWith('vis');
-  $('hmscale').textContent=metric=='decode'?'Colour from 50% (chance) to 100% balanced accuracy.':isVis?'Colour from 0 to 3× a random direction.':`Colour from 0 to the highest value in each grid (WEB ${(mw*100).toFixed(0)}%, JNT ${(mj*100).toFixed(0)}%).`}
+  $('hmscale').textContent=metric=='decode'?'Colour from 50% (chance) to 100% balanced accuracy.':isVis?'Colour from 0 to 3× a random direction.':
+    metric=='excess'?`Attention to the marker minus what the head gives any word at the same distance. Coloured: the head singles out the marker; grey: it gives the marker less than usual (up to ±${Math.round(Math.max(mw,mj)*100)} points).`:
+    metric=='prev'?`Attention from each word to the word just before it, whatever that word is (up to ${Math.round(Math.max(mw,mj)*100)}%).`:
+    `Colour from 0 to the highest value in each grid (WEB ${(mw*100).toFixed(0)}%, JNT ${(mj*100).toFixed(0)}%).`}
 
-function renderAblation(){let h='';const rl=R.readout_layer;
-  $('abnote').innerHTML=`Heads are silenced (or only their contribution along the feature direction is removed), and we measure how much of the ${'feature'} signal is left at layer ${rl}. A dark bar well below its random baseline (black tick) means the model relies on those heads.`;
-  R.features.forEach(f=>{['web','jnt'].forEach(v=>{const a=R.ablation[f+'_'+v];if(!a||!a.runs)return;
-    a.runs.filter(r=>r.mode=='zero').forEach(r=>{const rnd=r.random_retained.reduce((s,x)=>s+x,0)/r.random_retained.length;
-      const w=Math.max(0,Math.min(1.2,r.retained))/1.2*100,b=Math.max(0,Math.min(1.2,rnd))/1.2*100;
-      h+=`<div class="ab"><span>${f} · ${v.toUpperCase()}<br><span class="note">top ${r.k} heads</span></span><span class="t" title="random ${rnd.toFixed(2)}"><i style="width:${w}%;background:var(${VC[v]})"></i><b style="left:${b}%"></b></span><span class="n">${Math.round(r.retained*100)}%</span></div>`})})});
-  $('rab').innerHTML=h||'<p class="note">No ablation results in this export.</p>';
+function renderAblation(){const rl=R.readout_layer;
+  $('abnote').innerHTML=`Heads below layer ${rl} are silenced and we measure how much of the feature signal is left at layer ${rl} (100% = no effect). <b>Marker heads</b>: the heads that attend most to the marker. <b>Previous-word heads</b>: the heads that attend most to whatever word comes before. <b>Respelled</b>: the Jamaican text in English spelling, Creole grammar kept.`;
+  const pct=x=>x==null?'<td class="n">–</td>':`<td class="n"><span class="cb"><i style="width:${Math.max(0,Math.min(110,x*100))/1.1}%"></i><span>${Math.round(x*100)}%</span></span></td>`;
+  const mean=a=>a&&a.length?a.reduce((s,x)=>s+x,0)/a.length:null;
+  let h='';
+  R.features.forEach(f=>{
+    const run=(v,k)=>((R.ablation[f+'_'+v]||{}).runs||[]).find(r=>r.mode=='zero'&&r.k==k);
+    const prv=(v,k)=>(((R.prev_ablation||{})[f+'_'+v]||{}).runs||[]).find(r=>r.k==k);
+    const o=((R.orthography.features||{})[f]||{}).ablation;const orun=k=>o&&o.runs?o.runs.find(r=>r.k==k):null;
+    h+=`<table class="abt"><caption>${f}</caption><thead><tr><th></th><th colspan="2">Marker heads</th><th colspan="2">Previous-word heads</th><th>Random</th></tr><tr><th></th><th>5</th><th>20</th><th>5</th><th>20</th><th>20</th></tr></thead><tbody>`;
+    [['web','Standard English'],['jnt','Jamaican Creole']].forEach(([v,n])=>{const r5=run(v,5),r20=run(v,20);
+      h+=`<tr class="${v}"><th>${n}</th>${pct(r5&&r5.retained)}${pct(r20&&r20.retained)}${pct(prv(v,5)&&prv(v,5).retained)}${pct(prv(v,20)&&prv(v,20).retained)}${pct(r20&&mean(r20.random_retained))}</tr>`});
+    if(o)h+=`<tr class="jnt rs"><th>Jamaican, respelled</th>${pct(orun(5)&&orun(5).jntr)}${pct(orun(20)&&orun(20).jntr)}<td class="n">–</td><td class="n">–</td>${pct(orun(20)&&mean(orun(20).jntr_random))}</tr>`;
+    h+='</tbody></table>'});
+  $('rab').innerHTML=h;
   // probe accuracy lines for the chosen feature
   const W=320,H=120,pad=24;let s=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;margin-top:6px">`;
   [.5,.75,1].forEach(y=>{const yy=H-pad-(y-.5)/.5*(H-2*pad);s+=`<line x1="${pad}" x2="${W-6}" y1="${yy}" y2="${yy}" stroke="var(--line)"/><text x="2" y="${yy+4}" font-size="10" fill="var(--mute)">${y*100}</text>`});
   ['web','jnt'].forEach(v=>{const pr=R.probes[feat+'_'+v];if(!pr||!pr.acc)return;const n=pr.acc.length;
     const pts=pr.acc.map((a,l)=>`${pad+l/(n-1)*(W-pad-6)},${H-pad-(a-.5)/.5*(H-2*pad)}`).join(' ');
     s+=`<polyline points="${pts}" fill="none" stroke="var(${VC[v]})" stroke-width="2.5"/>`});
+  const oj=((R.orthography.features||{})[feat]||{}).acc_jntr;
+  if(oj){const n=oj.length;s+=`<polyline points="${oj.map((a,l)=>`${pad+l/(n-1)*(W-pad-6)},${H-pad-(a-.5)/.5*(H-2*pad)}`).join(' ')}" fill="none" stroke="var(--dc-purple)" stroke-width="2" stroke-dasharray="5 4"/>`}
   s+=`<text x="${pad}" y="${H-4}" font-size="10" fill="var(--mute)">layer 0</text><text x="${W-6}" y="${H-4}" font-size="10" fill="var(--mute)" text-anchor="end">layer ${R.n_layers}</text></svg>`;
-  $('rprobe').innerHTML=`<p class="note">Balanced accuracy (%) of a linear probe for <b>${feat}</b> on the residual stream: <span style="color:var(--dc-blue);font-weight:700">Standard English</span>, <span style="color:var(--dc-purple);font-weight:700">Jamaican Creole</span>. Change the feature in the head map.</p>`+s}
+  $('rprobe').innerHTML=`<p class="note">Balanced accuracy (%) of a linear probe for <b>${feat}</b> on the residual stream: <span style="color:var(--dc-blue);font-weight:700">Standard English</span>, <span style="color:var(--dc-purple);font-weight:700">Jamaican Creole</span>, dashed: Jamaican respelled in English spelling. Change the feature in the head map.</p>`+s}
 
 function render(){if($('real').hidden)return;
   $('vWeb').setAttribute('aria-pressed',va=='web');$('vJnt').setAttribute('aria-pressed',va=='jnt');
@@ -540,7 +569,9 @@ $('rfeat').innerHTML=R.features.map(f=>`<option>${f}</option>`).join('');
 $('rmetric').innerHTML=Object.entries(METRICS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
 $('rhow').innerHTML=[
   `Each verse appears twice: in the World English Bible and in the Jamaican New Testament. Switch between them to see the same head at work on the two varieties.`,
-  `Past in Standard English sits on the verb (<i>woke</i>); in Jamaican Creole it often sits on a marker before the verb (<i>did kom</i>). For the model to know a Jamaican verb is past, a head has to carry that information from the marker to the verb. Pick a head that “attends to the past marker” and tap a verb labelled <i>past</i>.`,
+  `Past in Standard English sits on the verb (<i>woke</i>); in Jamaican Creole it often sits on a marker before the verb (<i>did kom</i>). For the model to know a Jamaican verb is past, a head has to carry that information from the marker to the verb, and a few heads do: silencing them removes most of the signal.`,
+  `But those heads are the model's generic previous-word heads: they look at whatever word comes before, not at <i>did</i> or <i>a</i> as such (head map: “Marker attention beyond the previous-word habit”). English has a head made for its progressive, 4.5, which links an <i>-ing</i> verb to <i>was/were</i>; on Jamaican <i>a</i> + verb it hardly responds. The Creole marking gets through by adjacency, not through the machinery the model built for the standard.`,
+  `Spelling is not the reason: respelled in English spelling with the Creole grammar kept, the Jamaican text still depends on the same heads (table, “respelled”).`,
   `Plural in Jamaican Creole comes after the noun (<i>di man dem</i>). Pythia reads left to right, so the noun cannot yet see its <i>dem</i>; the label sits on <i>dem</i>.`,
   `${esc(R.label_note)}`].map(t=>`<li>${t}</li>`).join('');
 $('rcredit').textContent=`Model: ${R.model}. ${R.credit}`;
@@ -556,7 +587,7 @@ $('rag').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b
   const i=R.heads.findIndex(([l,h])=>l==+d.l&&h==+d.h);if(i>=0){hk=i;render()}}));
 new ResizeObserver(()=>{if(!$('real').hidden)drawSpec()}).observe($('rspecwrap'));
 // start on a JNT past head and a past-marked verb, if there is one
-const ph=R.heads.findIndex(h=>/past marker \(JNT/.test(h[2]));if(ph>=0)hk=ph;
+const ph=R.heads.findIndex(h=>/past marker in JNT/.test(h[2]));if(ph>=0)hk=ph;
 pi=Math.max(0,R.pairs.findIndex(p=>Object.values(p.jnt.labels.past).includes(1)));pickFocus();
 {const p=P(),pf=Object.keys(p.labels.past).map(Number).find(i=>p.labels.past[i]===1&&p.readout[i]);if(pf!=null)focus=pf}
 let saved=null;try{saved=localStorage.getItem('am-mode')}catch(e){}
