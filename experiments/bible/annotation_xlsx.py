@@ -31,6 +31,16 @@ NT_ORDER = ["MAT", "MRK", "LUK", "JHN", "ACT", "ROM", "1CO", "2CO", "GAL", "EPH"
             "COL", "1TH", "2TH", "1TI", "2TI", "TIT", "PHM", "HEB", "JAS", "1PE", "2PE",
             "1JN", "2JN", "3JN", "JUD", "REV"]
 TO_GOLD = {"yes": "1", "no": "0", "skip": "x"}
+
+# Past progressives count as past on the verb (TB, 27 Nov 2026). The first annotation
+# rounds were done under instructions that told annotators to skip them, so on import a
+# "skip" on an overtly marked past progressive becomes past, with a note. A "no" is kept
+# (a real disagreement) and listed.
+PAST_PROG = {
+    "jnt": re.compile(r"\b(?:did|en|ben|neehn) (?:(?:no|jos|stil|aalwiez) )?a \["),
+    "web": re.compile(r"\b(?:was|were) (?:\w+ )?\[\w+ing\]", re.I),
+}
+NOTE_PP = "past progressive: counted as past by definition (TB, 27 Nov 2026)"
 FONT = "Arial"
 PURPLE = "832161"
 INPUT_FILL = PatternFill("solid", fgColor="FFF2CC")
@@ -271,6 +281,13 @@ def import_(a):
                 if g:
                     r["gold"], r["note"] = g
                     n += 1
+                if f == "past" and PAST_PROG[variety].search(r["context"]):
+                    if r["gold"] == "x":
+                        r["gold"] = "1"
+                        r["note"] = "; ".join(x for x in (r["note"], NOTE_PP) if x)
+                        print(f"  past progressive set to past: {r['ref']} {r['word']}")
+                    elif r["gold"] == "0":
+                        print(f"  check: annotator says not past: {r['ref']} {r['context']}")
             with open(ANN / f"{variety}_{f}.csv", "w", encoding="utf-8", newline="") as fh:
                 w = csv.DictWriter(fh, fieldnames=fields)
                 w.writeheader()
