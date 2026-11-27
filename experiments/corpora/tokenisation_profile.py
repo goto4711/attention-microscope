@@ -10,7 +10,7 @@ Light cleaning per format:
                         <X>…</X> removed, then all markup; S* files spoken, W* written
   CORAAL                Content column of the interviewees only (speaker ids with _int_
                         are interviewers); /RD-…/ redactions and <…> / […] / (…) removed
-  AAPB oral histories   [bracketed] notes and ALL-CAPS interviewer turns removed
+  AAPB oral histories   [bracketed] notes, ALL-CAPS interviewer turns and speaker labels removed
   WPA narratives        Project Gutenberg header and licence removed
   LinCE Hindi–English   word lists from the Arrow files; also by language tag
   WEB, JNT              the Bible pair (derived verses)
@@ -72,8 +72,13 @@ def aapb(folder):
     for f in sorted(glob.glob(str(D / folder / "*.txt"))):
         t = open(f, encoding="utf-8", errors="replace").read()
         t = re.sub(r"\[[^\]]*\]", " ", t)
+        t = re.sub(r"\b\d{2}:\d{2}:\d{2}(?::\d{2})?\b", " ", t)          # timecodes
+        t = re.sub(r"\b(?:INTERVIEWER|INTERVIEWEE|CAMERA[A-Z ]*)\s*\d*\s*:", " ", t)
+        t = re.sub(r"(?<![\w])\d+\s*:", " ", t)
         # drop interviewer turns transcribed in capitals (runs of 3+ all-caps words)
         t = re.sub(r"(?:\b[A-Z][A-Z'’-]+\b[\s,.?!:;—-]*){3,}", " ", t)
+        # speaker labels such as "Clark:" or "JUST A McLaurin:"
+        t = re.sub(r"(?:\b[A-Z][\w.'’-]*\s){0,3}[A-Z][\w.'’-]*:\s", " ", t)
         yield t
 
 
