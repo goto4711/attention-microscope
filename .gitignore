@@ -9,3 +9,7 @@ __pycache__/
 .ipynb_checkpoints/
 .DS_Store
 .claude/
+
+# Contains Jamaican NT verse text (© Bible Society of the West Indies).
+# Un-ignore only once the licence allows publishing these verses.
+specimens/real-specimens.js

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bible parallel pair, steps 1-3. Run from the repository root:
+# Bible parallel pair, steps 1-4. Run from the repository root:
 #   bash experiments/bible/run.sh            # full sample (1000 verse pairs)
 #   bash experiments/bible/run.sh --limit 50 # quick trial
 # Needs data/patois/jnt.txt; downloads WEB (ebible.org) and Pythia on first run.
@@ -17,3 +17,5 @@ python experiments/bible/align.py
 python experiments/bible/features.py
 python experiments/bible/extract.py --model "$MODEL" "$@"
 python experiments/bible/probe.py --model "${MODEL##*/}"
+python experiments/bible/heads.py --model "$MODEL"
+python experiments/bible/export_specimens.py

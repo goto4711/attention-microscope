@@ -92,8 +92,45 @@ input[type=range]{width:100%;accent-color:var(--dc-purple);height:44px}
 ul.how{margin:8px 0 0;padding-left:1.2em;display:grid;gap:6px;font-size:15px}
 ul.how li::marker{color:var(--dc-purple)}
 footer{color:var(--mute);font-size:13px;font-weight:300}
+/* Mode switch (in the band) and the real-specimen mode. WEB = blue (second series), JNT = purple. */
+.mode{display:inline-flex;flex-wrap:wrap;max-width:100%;gap:0;border:1px solid rgba(255,255,255,.5);border-radius:6px;overflow:hidden}
+.mode button{border:0;border-radius:0;background:transparent;color:#fff;min-height:42px;white-space:nowrap}
+.mode button:hover{background:var(--dc-green);color:var(--dc-black)}
+.mode button[aria-pressed=true]{background:var(--dc-green);color:var(--dc-black);border:0}
+[hidden]{display:none!important}
+#rspec{display:block;height:250px}
+#rspec .chip{fill:#fff;stroke:var(--line);cursor:pointer}
+#rspec .chip.lab{stroke:var(--ok);stroke-width:1.5}
+#rspec .chip.on{fill:var(--dc-purple);stroke:var(--dc-purple)}
+#rspec .w{fill:var(--ink);font-size:14px;font-weight:500;font-family:var(--dc-font);pointer-events:none}
+#rspec .w.on{fill:#fff}
+#rspec .pc{fill:var(--mute);font-size:12px;font-family:var(--dc-font);font-variant-numeric:tabular-nums}
+#rspec .pc.max{fill:var(--dc-purple);font-weight:700}
+#rspec .arc{fill:none;stroke:var(--dc-purple);stroke-linecap:round}
+#rspec.web .arc{stroke:var(--dc-blue)}
+#rspec .ft{font-size:11px;font-family:var(--dc-font);font-weight:700}
+#rspec .ft.y{fill:var(--ok)}#rspec .ft.n{fill:var(--dc-grey)}
+.vsw button[aria-pressed=true].web{background:var(--dc-blue);border-color:var(--dc-blue)}
+.ro{display:grid;grid-template-columns:7.2em minmax(0,1fr);gap:8px 10px;align-items:center;margin-top:10px;font-size:14px}
+.ro svg{width:100%;height:56px;display:block}
+.hm{display:grid;gap:1px;margin-top:6px}
+.hm div{aspect-ratio:1;border-radius:2px;min-width:0}
+.hm div.sel{outline:2px solid var(--ink);outline-offset:-1px;cursor:pointer}
+.hm div.cur{outline:3px solid var(--ok);outline-offset:-1px}
+.hmw{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.hml{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--dc-purple);margin-top:8px}
+.ab{display:grid;grid-template-columns:8.6em minmax(0,1fr) 3.4em;gap:6px 10px;align-items:center;font-size:14px;margin-top:6px}
+.ab .t{position:relative;height:16px;background:var(--dc-paper-2);border:1px solid var(--line);border-radius:3px}
+.ab .t i{position:absolute;top:2px;bottom:2px;left:0;border-radius:2px}
+.ab .t b{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink)}
+.ab .n{font-variant-numeric:tabular-nums;text-align:right;font-size:13px}
+.kv{display:grid;grid-template-columns:7.2em repeat(3,minmax(0,1fr)) 4.4em;gap:6px 10px;align-items:center;font-size:14px}
+.kv .lh{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--dc-purple);line-height:1.25}
+.vb{position:relative;height:14px;background:var(--dc-paper-2);border:1px solid var(--line);border-radius:3px}
+.vb i{position:absolute;top:1px;bottom:1px;left:0;border-radius:2px;background:var(--dc-purple)}
+.vb b{position:absolute;top:-2px;bottom:-2px;left:33.3%;width:1px;background:var(--dc-grey)}
 @media(max-width:860px){.grid2,.maps{grid-template-columns:minmax(0,1fr)}.topbar{grid-template-columns:auto minmax(0,1fr)}.topbar .bar{grid-column:1/-1}}
-@media(max-width:420px){.lens{grid-template-columns:5.6em repeat(3,minmax(0,1fr)) 3.6em;gap:5px 6px}.topbar .dc-logo{height:44px}}
+@media(max-width:420px){.mode .wide{display:none}.lens{grid-template-columns:5.6em repeat(3,minmax(0,1fr)) 3.6em;gap:5px 6px}.topbar .dc-logo{height:44px}}
 </style></head><body>
 
 <header class="band topbar dc-band dc-on-dark">
@@ -101,15 +138,68 @@ footer{color:var(--mute);font-size:13px;font-weight:300}
   <div>
     <h1><span class="dc-highlight">Attention microscope</span></h1>
     <p class="lede">One attention head, a toy language and eight readable features. Set or train W<sub>Q</sub>, W<sub>K</sub> and W<sub>V</sub>, then watch which features each lens lets through and which it leaves invisible. · Deep Culture, University of Amsterdam</p>
+    <span class="mode" id="modesw" hidden style="margin-top:12px"><button id="mToy" aria-pressed="true">Toy language</button><button id="mReal" aria-pressed="false">Real specimens<span class="wide"> · Pythia</span></button></span>
   </div>
-  <div class="bar">
+  <div class="bar" id="toyctl">
     <select id="preset" aria-label="Preset head"></select>
     <label class="ck">d<sub>head</sub> <select id="dh" aria-label="Head dimension"></select></label>
     <label class="ck"><input type="checkbox" id="causal"> Causal mask</label>
   </div>
 </header>
 
-<main class="band" style="padding-top:4px"><div class="wrap">
+<main class="band" id="real" hidden style="padding-top:4px"><div class="wrap">
+  <div class="grid2">
+    <section class="panel">
+      <div class="head"><h2><span class="dc-highlight" id="rfoclabel">Specimen</span></h2>
+        <div class="bar"><select id="rverse" aria-label="Verse"></select>
+          <span class="bar vsw"><button id="vWeb" class="web" aria-pressed="false">Standard English</button><button id="vJnt" aria-pressed="true">Jamaican Creole</button></span></div></div>
+      <div class="bar" style="margin:4px 0 6px"><select id="rhead" aria-label="Attention head" style="max-width:100%"></select></div>
+      <p class="note" id="rwhy"></p>
+      <div id="rspecwrap" class="scroll" style="margin:0 -6px"><svg id="rspec" role="img" aria-label="Attention arcs from the focused word in a real model"></svg></div>
+      <div class="legend"><span><i style="box-shadow:inset 0 0 0 1.5px var(--ok);background:#fff"></i>labelled word</span><span style="color:var(--ok);font-weight:700">pl · past · prog</span><span>feature present</span><span style="color:var(--dc-grey);font-weight:700">pl · past · prog</span><span>feature absent</span></div>
+      <div class="head" style="margin-top:14px"><h2><span class="dc-highlight">Attention grid</span></h2></div>
+      <p class="note">This head on this verse. Rows are queries, columns are keys; the remainder of each row goes to the start token (the attention sink).</p>
+      <div class="scroll"><div id="rag" class="ag"></div></div>
+    </section>
+
+    <section class="panel">
+      <h2><span class="dc-highlight">Through the lens</span></h2>
+      <p class="note">Where in the model the focused word's features become readable: the probe readout at each layer (+1 = like a typical word with the feature, −1 = like one without). The dashed line marks this head's layer.</p>
+      <div id="rro"></div>
+      <h3 style="margin-top:18px">What this head's lenses see</h3>
+      <p class="note">How strongly W<sub>Q</sub>, W<sub>K</sub> and W<sub>V</sub> respond to each feature direction, against a random direction (grey line = 1×). Last column: how well the feature can be decoded from what the head writes.</p>
+      <div id="rkv" class="kv" style="margin-top:10px"></div>
+      <p id="rsum" class="note" style="margin-top:12px;background:var(--tint);border-left:4px solid var(--dc-purple);padding:10px 12px;border-radius:0 4px 4px 0;color:var(--ink);font-weight:400"></p>
+    </section>
+  </div>
+
+  <div class="grid2">
+    <section class="panel">
+      <div class="head"><h2><span class="dc-highlight">Head map</span></h2>
+        <div class="bar"><select id="rfeat" aria-label="Feature"></select><select id="rmetric" aria-label="Measure"></select></div></div>
+      <p class="note">Every head of the model: layers top to bottom, heads left to right. Outlined heads have attention on the page; tap one to inspect it.</p>
+      <div class="hmw"><div><div class="hml">Standard English (WEB)</div><div id="hmweb" class="hm"></div></div><div><div class="hml">Jamaican Creole (JNT)</div><div id="hmjnt" class="hm"></div></div></div>
+      <p class="note" id="hmscale" style="margin-top:8px"></p>
+    </section>
+
+    <section class="panel">
+      <h2><span class="dc-highlight">Does the model need these heads?</span></h2>
+      <p class="note" id="abnote"></p>
+      <div id="rab"></div>
+      <h3 style="margin-top:18px">Probe accuracy by layer</h3>
+      <div id="rprobe"></div>
+    </section>
+  </div>
+
+  <section class="tip">
+    <div class="k">Reading the real specimens</div>
+    <ul class="how" id="rhow"></ul>
+    <p class="note" style="margin-top:10px" id="rcredit"></p>
+  </section>
+  <footer style="margin-top:24px">Deep Culture (ERC), University of Amsterdam · <a href="https://github.com/goto4711/attention-microscope" style="color:var(--dc-purple)">Source on GitHub</a></footer>
+</div></main>
+
+<main class="band" id="toy" style="padding-top:4px"><div class="wrap">
   <div class="grid2">
     <section class="panel">
       <div class="head"><h2><span class="dc-highlight" id="foclabel">Specimen</span></h2>
@@ -336,6 +426,142 @@ $('trainqk').onclick=()=>train('qk');$('trainv').onclick=()=>train('v');
 si=Math.max(0,CORPUS.findIndex(s=>s.find(t=>t.role=='subj').f[5]&&s.some(t=>t.role=='adj')));
 preset('agree');hist.length=0;
 const ro=new ResizeObserver(()=>cur&&drawSpec());ro.observe($('specwrap'));
+}
+</script>
+<!-- Real specimens from Pythia (experiments/bible/export_specimens.py). Optional: without
+     this file the page is the toy only. A script, not JSON, so it also loads from file://. -->
+<script src="specimens/real-specimens.js"></script>
+<script>
+{
+const R=window.REAL_SPECIMENS;
+const $=id=>document.getElementById(id);
+if(R){
+$('modesw').hidden=false;
+const FT={plural:'pl',past:'past',progressive:'prog'};
+const VN={web:'Standard English',jnt:'Jamaican Creole'};
+const VC={web:'--dc-blue',jnt:'--dc-purple'};
+const METRICS={marker:'Attention to the marker',decode:'Feature decodable from head output',visV:'W_V visibility',visQ:'W_Q visibility',visK:'W_K visibility'};
+let pi=0,va='jnt',hk=0,focus=0,feat='past',metric='marker';
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const col=(x,m,c)=>`color-mix(in srgb,var(${c}) ${Math.max(0,Math.min(100,x/m*100))*.92}%,#fff)`;
+const fg=(x,m)=>x/m>.55?'#fff':'var(--ink)';
+const P=()=>R.pairs[pi][va];
+const head=()=>R.heads[hk];
+
+function setMode(real){$('real').hidden=!real;$('toy').hidden=real;$('toyctl').hidden=real;
+  $('mToy').setAttribute('aria-pressed',!real);$('mReal').setAttribute('aria-pressed',real);
+  try{localStorage.setItem('am-mode',real?'real':'toy')}catch(e){}
+  if(real)render();else window.dispatchEvent(new Event('resize'))}
+
+function pickFocus(){const p=P();const lab=Object.keys(p.readout).map(Number);
+  const pos=lab.filter(i=>R.features.some(f=>p.labels[f][i]===1));focus=pos.length?pos[0]:(lab[0]??0)}
+
+function drawSpec(){const p=P(),w=p.words,n=w.length,A=p.attn[hk][focus],svg=$('rspec');
+  svg.classList.toggle('web',va=='web');
+  const Wd=Math.max($('rspecwrap').clientWidth,n*62),H=250,cw=(Wd-12)/n,x=j=>6+cw*(j+.5),cy=H-96,yb=cy-6,av=yb-14;
+  svg.setAttribute('width',Wd);svg.style.width=Wd+'px';svg.setAttribute('viewBox',`0 0 ${Wd} ${H}`);
+  let mx=0;A.forEach((a,j)=>{if(a>A[mx])mx=j});let h='';
+  A.forEach((a0,j)=>{const a=a0/100;if(a<.03)return;const sw=(1.5+10*a).toFixed(1),op=(.25+.75*a).toFixed(2);
+    if(j==focus){const X=x(j);h+=`<path class="arc" d="M${X-9},${yb} C${X-30},${yb-56} ${X+30},${yb-56} ${X+9},${yb}" stroke-width="${sw}" opacity="${op}"/>`;return}
+    const ht=Math.min(av,30+Math.abs(j-focus)*(av-30)/Math.max(1,n-1))*1.33;h+=`<path class="arc" d="M${x(focus)},${yb} C${x(focus)},${yb-ht} ${x(j)},${yb-ht} ${x(j)},${yb}" stroke-width="${sw}" opacity="${op}"/>`});
+  w.forEach((t,j)=>{const on=j==focus?' on':'',lab=p.readout[j]?' lab':'';
+    h+=`<rect class="chip${on}${lab}" data-j="${j}" x="${x(j)-cw/2+3}" y="${cy}" width="${cw-6}" height="34" rx="8"/><text class="w${on}" x="${x(j)}" y="${cy+22}" text-anchor="middle">${esc(t)}</text>`;
+    h+=`<text class="pc${j==mx?' max':''}" x="${x(j)}" y="${cy+52}" text-anchor="middle">${A[j]}%</text>`;
+    let k=0;R.features.forEach(f=>{const y=p.labels[f][j];if(y===undefined)return;h+=`<text class="ft ${y?'y':'n'}" x="${x(j)}" y="${cy+70+k*13}" text-anchor="middle">${FT[f]}</text>`;k++})});
+  svg.innerHTML=h;
+  const wrap=$('rspecwrap'),lo=Math.min(x(focus),x(mx))-cw,hi=Math.max(x(focus),x(mx))+cw;
+  if(lo<wrap.scrollLeft||hi>wrap.scrollLeft+wrap.clientWidth)wrap.scrollLeft=Math.max(0,(lo+hi)/2-wrap.clientWidth/2)}
+
+function renderGrid(){const p=P(),w=p.words,n=w.length,g=$('rag'),M=p.attn[hk];
+  g.style.gridTemplateColumns=`5.6em repeat(${n},minmax(26px,1fr))`;g.style.minWidth=(90+n*29)+'px';
+  let h='<div></div>'+w.map(t=>`<div class="ch" title="${esc(t)}">${esc(t)}</div>`).join('');
+  M.forEach((r,i)=>{h+=`<button class="rl${i==focus?' on':''}" data-i="${i}">${esc(w[i])}</button>`+r.map((a,j)=>`<button class="cell${j>i?' x':''}" data-i="${i}" style="background:${col(a,100,VC[va])};color:${fg(a,100)}" aria-label="${esc(w[i])} to ${esc(w[j])}">${j>i?'':a}</button>`).join('')});
+  g.innerHTML=h}
+
+function spark(vals,c){const n=vals.length,W=300,H=56,mid=H/2,s=H/2/2.2,bw=W/n;let h=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><line x1="0" x2="${W}" y1="${mid}" y2="${mid}" stroke="var(--dc-light)"/>`;
+  vals.forEach((v,l)=>{const y=Math.max(-2.2,Math.min(2.2,v))*s;h+=`<rect x="${l*bw+1}" width="${bw-2}" y="${y>0?mid-y:mid}" height="${Math.abs(y)}" fill="var(${v>=0?c:'--dc-grey'})"/>`});
+  const L=head()[0];h+=`<line x1="${(L+.5)*bw}" x2="${(L+.5)*bw}" y1="0" y2="${H}" stroke="var(--ink)" stroke-dasharray="3 3"/>`;
+  return h+'</svg>'}
+
+function renderLens(){const p=P(),rd=p.readout[focus],[L,Hh]=head();
+  $('rfoclabel').textContent=`Attention from “${p.words[focus]}”`;
+  let h='';
+  if(!rd)h='<p class="note">This word has no feature label. Tap an outlined word.</p>';
+  else{h='<div class="ro">';R.features.forEach(f=>{if(!rd[f])return;const y=p.labels[f][focus];
+    h+=`<div><b>${f}</b><br><span class="note">${y?'present':'absent'}</span></div>${spark(rd[f],VC[va])}`});h+='</div><p class="note">Layer 0 (embeddings) on the left, layer '+R.n_layers+' on the right.</p>'}
+  $('rro').innerHTML=h;
+  let k=`<div class="lh">Feature</div><div class="lh">W<sub>Q</sub> looks for</div><div class="lh">W<sub>K</sub> shows</div><div class="lh">W<sub>V</sub> hands over</div><div class="lh" style="text-align:right">Output</div>`;
+  R.features.forEach(f=>{const m=R.maps[f+'_'+va]||{};const bar=v=>v==null?'<div class="note">–</div>':`<div class="vb" title="${v.toFixed(2)}×"><b></b><i style="width:${Math.min(100,v/3*100)}%"></i></div>`;
+    const dec=m.decode?m.decode[L][Hh]:null;
+    k+=`<div>${f}</div>${bar(m.visQ&&m.visQ[L][Hh])}${bar(m.visK&&m.visK[L][Hh])}${bar(m.visV&&m.visV[L][Hh])}<div class="pass">${dec?Math.round(dec*100)+'%':'–'}</div>`});
+  $('rkv').innerHTML=k;
+  const A=p.attn[hk][focus];let top=0;A.forEach((a,j)=>{if(a>A[top])top=j});
+  const sink=100-A.reduce((s,a)=>s+a,0);
+  const mk=R.maps[feat+'_'+va]&&R.maps[feat+'_'+va].marker;
+  $('rsum').innerHTML=`Head ${L}.${Hh}: <b>${esc(p.words[focus])}</b> looks mostly at <b>${esc(p.words[top])}</b> (${A[top]}%)`+(sink>20?`, and sends ${sink}% to the start token`:'')+'.'+
+    (mk?` Across the sample, this head puts ${Math.round(mk[L][Hh]*100)}% of a ${VN[va]} ${feat} word's attention on its marker.`:'');
+  $('rwhy').textContent=`Layer ${L}, head ${Hh}: ${head()[2]}.`}
+
+function heat(el,key){const m=(R.maps[key]||{})[metric];if(!m){el.innerHTML='<p class="note">Not available for this feature.</p>';el.style.gridTemplateColumns='1fr';return 0}
+  el.style.gridTemplateColumns=`repeat(${R.n_heads},minmax(0,1fr))`;
+  const isVis=metric.startsWith('vis'),lo=metric=='decode'?.5:0,mx=isVis?3:Math.max(...m.flat(),.01);
+  const sel=new Set(R.heads.map(([l,h])=>l+'.'+h)),[cl,ch]=head();
+  el.innerHTML=m.map((r,l)=>r.map((v,h)=>`<div class="${sel.has(l+'.'+h)?'sel':''}${l==cl&&h==ch?' cur':''}" data-l="${l}" data-h="${h}" title="layer ${l}, head ${h}: ${v}" style="background:${col(v-lo,mx-lo,key.endsWith('web')?'--dc-blue':'--dc-purple')}"></div>`).join('')).join('');
+  return mx}
+
+function renderMaps(){const mw=heat($('hmweb'),feat+'_web'),mj=heat($('hmjnt'),feat+'_jnt');
+  const isVis=metric.startsWith('vis');
+  $('hmscale').textContent=metric=='decode'?'Colour from 50% (chance) to 100% balanced accuracy.':isVis?'Colour from 0 to 3× a random direction.':`Colour from 0 to the highest value in each grid (WEB ${(mw*100).toFixed(0)}%, JNT ${(mj*100).toFixed(0)}%).`}
+
+function renderAblation(){let h='';const rl=R.readout_layer;
+  $('abnote').innerHTML=`Heads are silenced (or only their contribution along the feature direction is removed), and we measure how much of the ${'feature'} signal is left at layer ${rl}. A dark bar well below its random baseline (black tick) means the model relies on those heads.`;
+  R.features.forEach(f=>{['web','jnt'].forEach(v=>{const a=R.ablation[f+'_'+v];if(!a||!a.runs)return;
+    a.runs.filter(r=>r.mode=='zero').forEach(r=>{const rnd=r.random_retained.reduce((s,x)=>s+x,0)/r.random_retained.length;
+      const w=Math.max(0,Math.min(1.2,r.retained))/1.2*100,b=Math.max(0,Math.min(1.2,rnd))/1.2*100;
+      h+=`<div class="ab"><span>${f} · ${v.toUpperCase()}<br><span class="note">top ${r.k} heads</span></span><span class="t" title="random ${rnd.toFixed(2)}"><i style="width:${w}%;background:var(${VC[v]})"></i><b style="left:${b}%"></b></span><span class="n">${Math.round(r.retained*100)}%</span></div>`})})});
+  $('rab').innerHTML=h||'<p class="note">No ablation results in this export.</p>';
+  // probe accuracy lines for the chosen feature
+  const W=320,H=120,pad=24;let s=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;margin-top:6px">`;
+  [.5,.75,1].forEach(y=>{const yy=H-pad-(y-.5)/.5*(H-2*pad);s+=`<line x1="${pad}" x2="${W-6}" y1="${yy}" y2="${yy}" stroke="var(--line)"/><text x="2" y="${yy+4}" font-size="10" fill="var(--mute)">${y*100}</text>`});
+  ['web','jnt'].forEach(v=>{const pr=R.probes[feat+'_'+v];if(!pr||!pr.acc)return;const n=pr.acc.length;
+    const pts=pr.acc.map((a,l)=>`${pad+l/(n-1)*(W-pad-6)},${H-pad-(a-.5)/.5*(H-2*pad)}`).join(' ');
+    s+=`<polyline points="${pts}" fill="none" stroke="var(${VC[v]})" stroke-width="2.5"/>`});
+  s+=`<text x="${pad}" y="${H-4}" font-size="10" fill="var(--mute)">layer 0</text><text x="${W-6}" y="${H-4}" font-size="10" fill="var(--mute)" text-anchor="end">layer ${R.n_layers}</text></svg>`;
+  $('rprobe').innerHTML=`<p class="note">Balanced accuracy (%) of a linear probe for <b>${feat}</b> on the residual stream: <span style="color:var(--dc-blue);font-weight:700">Standard English</span>, <span style="color:var(--dc-purple);font-weight:700">Jamaican Creole</span>. Change the feature in the head map.</p>`+s}
+
+function render(){if($('real').hidden)return;
+  $('vWeb').setAttribute('aria-pressed',va=='web');$('vJnt').setAttribute('aria-pressed',va=='jnt');
+  $('rverse').value=pi;$('rhead').value=hk;$('rfeat').value=feat;$('rmetric').value=metric;
+  drawSpec();renderGrid();renderLens();renderMaps();renderAblation()}
+
+$('rverse').innerHTML=R.pairs.map((p,i)=>`<option value="${i}">${p.ref}</option>`).join('');
+$('rhead').innerHTML=R.heads.map(([l,h,w],i)=>`<option value="${i}">Head ${l}.${h} · ${esc(w)}</option>`).join('');
+$('rfeat').innerHTML=R.features.map(f=>`<option>${f}</option>`).join('');
+$('rmetric').innerHTML=Object.entries(METRICS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+$('rhow').innerHTML=[
+  `Each verse appears twice: in the World English Bible and in the Jamaican New Testament. Switch between them to see the same head at work on the two varieties.`,
+  `Past in Standard English sits on the verb (<i>woke</i>); in Jamaican Creole it often sits on a marker before the verb (<i>did kom</i>). For the model to know a Jamaican verb is past, a head has to carry that information from the marker to the verb. Pick a head that “attends to the past marker” and tap a verb labelled <i>past</i>.`,
+  `Plural in Jamaican Creole comes after the noun (<i>di man dem</i>). Pythia reads left to right, so the noun cannot yet see its <i>dem</i>; the label sits on <i>dem</i>.`,
+  `${esc(R.label_note)}`].map(t=>`<li>${t}</li>`).join('');
+$('rcredit').textContent=`Model: ${R.model}. ${R.credit}`;
+$('mToy').onclick=()=>setMode(false);$('mReal').onclick=()=>setMode(true);
+$('vWeb').onclick=()=>{va='web';pickFocus();render()};$('vJnt').onclick=()=>{va='jnt';pickFocus();render()};
+$('rverse').onchange=e=>{pi=+e.target.value;pickFocus();render()};
+$('rhead').onchange=e=>{hk=+e.target.value;render()};
+$('rfeat').onchange=e=>{feat=e.target.value;render()};
+$('rmetric').onchange=e=>{metric=e.target.value;render()};
+$('rspec').addEventListener('click',e=>{const j=e.target.dataset.j;if(j!=null){focus=+j;render()}});
+$('rag').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.i!=null){focus=+b.dataset.i;render()}});
+['hmweb','hmjnt'].forEach(id=>$(id).addEventListener('click',e=>{const d=e.target.dataset;if(d.l==null)return;
+  const i=R.heads.findIndex(([l,h])=>l==+d.l&&h==+d.h);if(i>=0){hk=i;render()}}));
+new ResizeObserver(()=>{if(!$('real').hidden)drawSpec()}).observe($('rspecwrap'));
+// start on a JNT past head and a past-marked verb, if there is one
+const ph=R.heads.findIndex(h=>/past marker \(JNT/.test(h[2]));if(ph>=0)hk=ph;
+pi=Math.max(0,R.pairs.findIndex(p=>Object.values(p.jnt.labels.past).includes(1)));pickFocus();
+{const p=P(),pf=Object.keys(p.labels.past).map(Number).find(i=>p.labels.past[i]===1&&p.readout[i]);if(pf!=null)focus=pf}
+let saved=null;try{saved=localStorage.getItem('am-mode')}catch(e){}
+if(saved=='real')setMode(true);
+}
 }
 </script>
 </body></html>

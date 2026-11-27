@@ -19,6 +19,8 @@ experiments/
     features.py        step 2: word-level feature labels + annotation sheets
     extract.py         step 1: per-head W_Q/W_K/W_V/W_O, residual stream, attention
     probe.py           step 3: linear probes per layer, cross-variety transfer
+    heads.py           step 4: per-head visibility, marker attention, head decoding, ablation
+    export_specimens.py step 7: real specimens for the page (specimens/real-specimens.js)
     annotation_xlsx.py Excel workbooks for hand annotation, and import of the labels
   out/                 (gitignored) arrays: weights, activations, attention, probe directions
 data/                  (gitignored) raw corpora, derived text, annotation sheets, HF cache
@@ -84,6 +86,35 @@ Label sources are recorded per word (`spacy`, `rule`, `gold`):
   These are the real counterpart of the toy page's feature rows.
 - `specimens/bible-pair_<model>_probes.json`: probe accuracy per layer, cross-variety
   transfer AUC, WEB/JNT direction cosine, label counts and sources, tokens per word.
+
+## Step 4: what each head sees (`heads.py`)
+
+Per layer, head, feature and variety:
+
+- **visibility**: ‖W_Q·d‖, ‖W_K·d‖, ‖W_V·d‖ for the step-3 probe direction d at that
+  layer, after the input LayerNorm (centring and gain), as a ratio to random directions
+  (1 = as visible as any direction, < 1 = the lens dims the feature).
+- **marker attention**: attention from positive words to the word with the overt marker
+  (JNT *did/en/ben/neehn/a*/modals before the verb, the noun before plural *dem*; WEB *be*
+  before a progressive). WEB plural and past are inflectional and have no marker.
+- **head decoding**: cross-validated probe accuracy on each head's output (64 dims).
+- **ablation**: the K heads (5 and 20, layers below the readout) with the highest marker
+  attention (else head decoding) are ablated, either by removing their contribution along
+  the feature direction or by silencing them. The share of the positive/negative gap at
+  layer 12 that survives ("retained", 1 = no effect) is compared with K random heads.
+
+Outputs: `out/<model>/heads.npz` and `specimens/bible-pair_<model>_heads.json`. On CPU the
+full run takes about an hour.
+
+## Real specimens on the page
+
+`python experiments/bible/export_specimens.py` writes `specimens/real-specimens.js` (about
+250 KB): 8 verse pairs with word-level attention for 12 selected heads, per-layer probe
+readouts at labelled words, head maps (marker attention, head decoding, W_Q/W_K/W_V
+visibility), probe curves and ablation results. `index.html` loads it with a plain
+`<script>` tag, so it also works opened from disk; when the file is absent the page is
+the toy only. The file contains Jamaican NT verses and is gitignored until the licence
+allows publishing them.
 
 ## Caveats so far
 
