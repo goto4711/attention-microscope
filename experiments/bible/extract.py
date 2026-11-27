@@ -87,6 +87,12 @@ def main():
     ap.add_argument("--device", default="auto")
     ap.add_argument("--attn-n", type=int, default=60, help="verses whose attention is saved")
     ap.add_argument("--limit", type=int, default=0, help="only the first N verses (0 = all)")
+    ap.add_argument("--varieties", nargs="+", default=["web", "jnt"],
+                    help="e.g. jntr for the respelled JNT (step-5 control); other than the default "
+                         "pair writes activations only")
+    ap.add_argument("--word-pos", choices=["last", "first", "mean"], default="last",
+                    help="subtoken that represents a word (step-5 control); not 'last' writes "
+                         "acts_<variety>_<pos>.npz only, without weights, attention or meta")
     a = ap.parse_args()
 
     device = pick_device(a.device)
@@ -102,7 +108,9 @@ def main():
     L, H, d = cfg.num_hidden_layers, cfg.num_attention_heads, cfg.hidden_size
     print(f"{a.model}@{a.revision} on {device}: {L} layers x {H} heads, d_model={d}")
 
-    export_weights(model, out / "weights.npz")
+    main_run = a.word_pos == "last" and a.varieties == ["web", "jnt"]
+    if main_run:
+        export_weights(model, out / "weights.npz")
     bos = tok.eos_token_id  # Pythia uses <|endoftext|> as document separator
 
     meta = {"model": a.model, "revision": a.revision, "n_layers": L, "n_heads": H,
@@ -113,7 +121,7 @@ def main():
             "word_position": "last subtoken of the word",
             "varieties": {}}
 
-    for variety in ("web", "jnt"):
+    for variety in a.varieties:
         rows = read_jsonl(DERIVED / f"sample_{variety}.jsonl")
         if a.limit:
             rows = rows[:a.limit]
@@ -129,14 +137,17 @@ def main():
             want = sorted({int(i) for f in FEATURES for i in r["labels"][f]})
             with torch.no_grad():
                 o = model(torch.tensor([ids], device=device),
-                          output_hidden_states=True, output_attentions=v < a.attn_n)
+                          output_hidden_states=True, output_attentions=main_run and v < a.attn_n)
             hs = torch.stack(o.hidden_states, 1)[0]  # [L+1, T, d]
             for i in want:
                 if w2t[i]:
-                    X.append(hs[:, w2t[i][-1]].half().cpu().numpy())
+                    t = w2t[i]
+                    vec = hs[:, t[-1]] if a.word_pos == "last" else hs[:, t[0]] if a.word_pos == "first" \
+                        else hs[:, t].mean(1)
+                    X.append(vec.half().cpu().numpy())
                     vi.append(v)
                     wi.append(i)
-            if v < a.attn_n:
+            if main_run and v < a.attn_n:
                 A = torch.stack(o.attentions, 0)[:, 0].float()  # [L, H, T, T]
                 W = len(w2t)
                 Aw = torch.zeros(L, H, W, W, device=A.device)
@@ -153,16 +164,19 @@ def main():
                 attn[f"bos{v}"] = bos_mass.half().cpu().numpy()
             if (v + 1) % 100 == 0:
                 print(f"  {variety}: {v + 1}/{len(rows)} verses, {time.time() - t0:.0f}s")
-        np.savez(out / f"acts_{variety}.npz", X=np.stack(X), verse=np.array(vi),
+        suffix = "" if a.word_pos == "last" else f"_{a.word_pos}"
+        np.savez(out / f"acts_{variety}{suffix}.npz", X=np.stack(X), verse=np.array(vi),
                  word=np.array(wi), tokens_per_word=np.array(tpw))
-        np.savez_compressed(out / f"attn_{variety}.npz", **attn)
+        if main_run:
+            np.savez_compressed(out / f"attn_{variety}.npz", **attn)
         tpw = np.array(tpw)
         meta["varieties"][variety] = {"verses": len(rows), "labelled_words": len(X),
                                       "tokens_per_word_mean": float(tpw.mean()),
                                       "tokens_per_word_hist": np.bincount(tpw).tolist()}
         print(f"{variety}: {len(X)} labelled words, {tpw.mean():.2f} tokens/word, "
               f"{time.time() - t0:.0f}s")
-    write_json(out / "meta.json", meta)
+    if main_run:
+        write_json(out / "meta.json", meta)
     print(f"-> {out}")
 
 

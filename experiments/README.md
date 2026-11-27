@@ -11,6 +11,7 @@ static file; the pipeline only feeds it derived numbers through `specimens/`.
 
 ```
 experiments/
+  corpora/tokenisation_profile.py  step 5: tokens per word for every collection in data/
   requirements.txt     pinned versions (tested: Python 3.13, macOS, CPU)
   bible/               controlled core: Jamaican NT x World English Bible, verse by verse
     run.sh             steps 1-3 end to end
@@ -21,6 +22,10 @@ experiments/
     probe.py           step 3: linear probes per layer, cross-variety transfer
     heads.py           step 4: per-head visibility, marker attention, head decoding, ablation
     annotation_report.py gold vs automatic labels (tagger / rule accuracy)
+    controls.py        step 5: subtoken position, single-token words, control task, surface
+                       baselines, offset-matched attention, previous-word head ablation
+    respell.py         step 5: JNT respelled in English-based spelling, grammar kept (jntr)
+    orthography.py     step 5: JNT vs respelled JNT vs WEB (tokenisation, probes, ablation)
     export_specimens.py step 7: real specimens for the page (specimens/real-specimens.js)
     annotation_xlsx.py Excel workbooks for hand annotation, and import of the labels
   out/                 (gitignored) arrays: weights, activations, attention, probe directions
@@ -109,6 +114,37 @@ Per layer, head, feature and variety:
 
 Outputs: `out/<model>/heads.npz` and `specimens/bible-pair_<model>_heads.json`. On CPU the
 full run takes about an hour.
+
+## Step 5: controls
+
+```bash
+python experiments/bible/extract.py --word-pos first      # and --word-pos mean
+python experiments/bible/controls.py --dynamic            # ~25 min on CPU
+python experiments/bible/respell.py
+python experiments/bible/extract.py --varieties jntr
+python experiments/bible/orthography.py
+python experiments/corpora/tokenisation_profile.py
+```
+
+- **Tokenisation across collections** (`specimens/tokenisation_profile.json`): every English
+  variety sits at 1.06–1.17 tokens per word, written or spoken; only the JNT (1.52, Cassidy
+  spelling) and romanised Hindi in LinCE (1.82) are heavily split. Tokenisation follows
+  spelling, not distance.
+- **Orthography** (`respell.py`, `orthography.py`): the JNT respelled word for word in
+  English-based spelling, with the Creole markers and words without an English cognate
+  kept (*When Jesus see the crowd a people dem, im go up upon the mountain*). Respellings
+  are base forms only, so no English plural or past marking leaks in. Tokens per word drop
+  to 1.14; the dependence of past and progressive on a few heads stays.
+- **Subtoken position and single-token words**: probe accuracy hardly changes with first,
+  mean or last subtoken, or on single-token words only.
+- **Control task** (Hewitt & Liang 2019): selectivity is high for WEB (~0.23 at layer 12)
+  but low for the rule-labelled JNT (0.05–0.13), because rule labels are fixed by the
+  previous word. The JNT probes must be re-read once hand labels (with unmarked past and
+  bare plurals) are in.
+- **Offset-matched attention and previous-word heads**: the heads with most attention to
+  the JNT markers are the model's generic previous-word heads, and ablating those has the
+  same effect. English has a dedicated progressive head (4.5: *-ing* -> *was/were*) that
+  barely attends to Jamaican *a*.
 
 ## Real specimens on the page
 
