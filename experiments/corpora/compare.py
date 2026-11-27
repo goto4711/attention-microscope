@@ -12,6 +12,11 @@ For every collection with a sample (data/derived/sample_<key>.jsonl) and activat
              encoded, but not where the standard puts it
   WEB itself held-out transfer (direction fitted on other folds), so it is not in-sample
 
+  unmarked   once hand labels are imported (variety_xlsx.py): the same AUC for the
+             variety's unmarked forms (plural without -s, past without -ed, progressive
+             without be) next to its standard-marked forms, against the same negatives.
+             This is the test that does not depend on the standard tagger
+
 plus tokens per word, label counts and sources, and the collection's distance from
 Standard English. Summary: transfer AUC averaged over layers 8-16, and its Spearman
 correlation with distance across collections.
@@ -47,14 +52,15 @@ MID = slice(8, 17)
 
 
 def xy(z, rows, f):
-    idx, y, src = [], [], []
+    idx, y, src, unm = [], [], [], []
     for k, (vi, wi) in enumerate(zip(z["verse"], z["word"])):
         lab = rows[vi]["labels"][f].get(str(wi))
         if lab is not None:
             idx.append(k)
             y.append(lab)
             src.append(rows[vi].get("sources", {}).get(f, {}).get(str(wi), "?"))
-    return np.array(idx, int), np.array(y, int), src
+            unm.append(rows[vi].get("marking", {}).get(f, {}).get(str(wi)) == "unmarked")
+    return np.array(idx, int), np.array(y, int), src, np.array(unm, bool)
 
 
 def fit(X, y, C=0.05):
@@ -81,7 +87,7 @@ def main():
         ent = {"label": label, "distance": dist, "sentences": len(rows),
                "tokens_per_word": round(float(t.mean()), 3), "features": {}}
         for f in FEATURES:
-            idx, y, src = xy(z, rows, f)
+            idx, y, src, unm = xy(z, rows, f)
             fe = {"n_pos": int(y.sum()), "n_neg": int(len(y) - y.sum()),
                   "sources": {s: src.count(s) for s in set(src)}}
             ent["features"][f] = fe
@@ -112,6 +118,17 @@ def main():
                 inh.append(round(float(balanced_accuracy_score(y, pred)), 3))
             fe["inhouse_acc"] = inh
             fe["transfer_mid"] = round(float(np.mean(auc[MID])), 3)
+            # hand-labelled unmarked forms (plural without -s, past without -ed, progressive
+            # without be) against the same negatives, next to the standard-marked positives
+            pos_u = unm & (y == 1)
+            if pos_u.sum() >= 10 and key != "web":
+                neg, pos_m = y == 0, (y == 1) & ~unm
+                def mid_auc(pos):
+                    sel = pos | neg
+                    return round(float(np.mean([roc_auc_score(y[sel], X[sel, l] @ D[l])
+                                                for l in range(MID.start, MID.stop)])), 3)
+                fe["unmarked"] = {"n_pos_unmarked": int(pos_u.sum()), "transfer_mid_unmarked": mid_auc(pos_u),
+                                  "transfer_mid_marked": mid_auc(pos_m) if pos_m.sum() >= 10 else None}
         res["collections"][key] = ent
         print(f"{label:34s} {dist if dist is not None else '-':>5} tok/w {ent['tokens_per_word']:.2f} | " +
               " | ".join(f"{f[:4]} {fe.get('transfer_mid', '-')} (in {fe.get('inhouse_acc', [None]*4)[3]}, "
@@ -124,6 +141,13 @@ def main():
             rho, p = spearmanr([d for d, _ in pts], [v for _, v in pts])
             res["summary"][f] = {"n": len(pts), "spearman_rho": round(float(rho), 3), "p": round(float(p), 4)}
             print(f"{f}: Spearman rho(distance, transfer AUC layers 8-16) = {rho:.2f} (p={p:.3f}, n={len(pts)})")
+    for key, c in res["collections"].items():
+        for f, fe in c["features"].items():
+            if "unmarked" in fe:
+                u = fe["unmarked"]
+                print(f"{c['label']:34s} {f:12s} WEB direction, layers 8-16: standard-marked "
+                      f"{u['transfer_mid_marked']} vs unmarked {u['transfer_mid_unmarked']} "
+                      f"(n unmarked {u['n_pos_unmarked']})")
     write_json(f"specimens/corpora_{a.model}.json", res)
     print(f"-> specimens/corpora_{a.model}.json")
 

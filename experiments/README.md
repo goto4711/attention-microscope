@@ -146,6 +146,31 @@ python experiments/corpora/tokenisation_profile.py
   same effect. English has a dedicated progressive head (4.5: *-ing* -> *was/were*) that
   barely attends to Jamaican *a*.
 
+## Other collections
+
+```bash
+python experiments/corpora/build_samples.py          # 1000 sentences per collection, spaCy labels
+python experiments/bible/extract.py --varieties ice-ja-written ice-ja-spoken aapb-howard aapb-eotp \
+    ice-in-written ice-in-spoken wpa coraal lince
+python experiments/corpora/compare.py               # WEB directions on each collection vs distance
+```
+
+spaCy only labels standard marking, so `compare.py` first tests whether the model reads
+standard marking in each variety. The variety-specific cases come from hand annotation:
+
+```bash
+python experiments/corpora/variety_candidates.py    # candidates across each whole collection
+python experiments/corpora/variety_xlsx.py export   # data/annotation/annotate_variety_<collection>.xlsx
+python experiments/corpora/variety_xlsx.py import data/annotation/annotate_variety_coraal.xlsx
+```
+
+Each workbook has tabs for plural without -s, past without -ed, progressive without be,
+habitual be, copula absence and third-person -s absence. Imported labels become gold labels
+marked "unmarked" in the sample; re-run `extract.py` for that collection (candidate
+sentences were added to the sample) and `compare.py`, which then reports the WEB direction
+on unmarked forms next to standard-marked ones. First priority: CORAAL, WPA, ICE Jamaica
+spoken. The workbooks contain corpus text: share them only within the licences.
+
 ## Real specimens on the page
 
 `python experiments/bible/export_specimens.py` writes `specimens/real-specimens.js` (about
