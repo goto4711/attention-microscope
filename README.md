@@ -21,3 +21,7 @@ Styled in the Deep Culture design; assets in `brand/` come from [goto4711/deep-c
 - 60 sentences are generated from a 25-word vocabulary.
 
 Single self-contained `index.html`, no build step.
+
+## Experiments with real data
+
+`experiments/` holds a Python pipeline that asks the same question of a real model (Pythia): which grammatical features do its attention heads see in varieties of English, compared with Standard English? It starts with the Jamaican New Testament aligned verse by verse with the World English Bible. Raw corpora stay in a local, gitignored `data/`; only derived numbers go into `specimens/`. See [experiments/README.md](experiments/README.md).

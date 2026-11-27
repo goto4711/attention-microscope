@@ -1,0 +1,11 @@
+# Raw corpora: several cannot be redistributed. Never commit.
+data/
+# Pipeline outputs that may contain corpus text or large arrays
+experiments/out/
+# Python / OS clutter
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+.DS_Store
+.claude/
