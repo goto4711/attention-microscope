@@ -20,6 +20,7 @@ experiments/
     extract.py         step 1: per-head W_Q/W_K/W_V/W_O, residual stream, attention
     probe.py           step 3: linear probes per layer, cross-variety transfer
     heads.py           step 4: per-head visibility, marker attention, head decoding, ablation
+    annotation_report.py gold vs automatic labels (tagger / rule accuracy)
     export_specimens.py step 7: real specimens for the page (specimens/real-specimens.js)
     annotation_xlsx.py Excel workbooks for hand annotation, and import of the labels
   out/                 (gitignored) arrays: weights, activations, attention, probe directions
@@ -71,6 +72,9 @@ Label sources are recorded per word (`spacy`, `rule`, `gold`):
   `python experiments/bible/annotation_xlsx.py import data/annotation/annotate_jnt.xlsx`,
   then re-run `run.sh`. The JNT workbook contains copyrighted verse text: share it only
   with collaborators, never publicly.
+- **Agreement**: `python experiments/bible/annotation_report.py` compares gold with the
+  automatic labels per sampling stratum (auto 1, auto 0, unlabelled) and writes
+  `specimens/annotation_report.json` (counts only).
 
 ## Outputs of step 1 and 3
 
