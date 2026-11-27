@@ -60,7 +60,8 @@ GUIDE = {
         ],
         "past": [
             "yes: past time, whether marked (did / en / ben / neehn + verb) or unmarked "
-            "(Juozif [wiek] op = Joseph woke up). Use the English verse to check the time.",
+            "(Juozif [wiek] op = Joseph woke up). Use the English verse to check the time. "
+            "A past progressive counts as past too: dem did a [tingk] gets yes here and yes on the Progressive tab.",
             "no: present, future (wi / a-go), habitual, commands, wishes.",
             "skip: not a verb or predicate (nouns, names, function words).",
         ],
@@ -73,9 +74,11 @@ GUIDE = {
     "web": {
         "plural": ["yes: plural noun (men, disciples).", "no: singular noun (man, disciple).",
                    "skip: not a noun, or a proper name."],
-        "past": ["yes: past tense verb (went, said, believed).",
+        "past": ["yes: past tense verb (went, said, believed). A past progressive counts as past "
+                 "on the -ing verb: was [teaching] gets yes here and yes on the Progressive tab.",
                  "no: present tense or base form after a modal (says, believe, will go).",
-                 "skip: not a finite verb (participles, infinitives, nouns)."],
+                 "skip: not a verb, or a participle or infinitive outside a past progressive "
+                 "(having [said], to [go])."],
         "progressive": ["yes: -ing verb with a form of 'be' (was teaching, are going).",
                         "no: any other finite verb.",
                         "skip: not a verb, or -ing without 'be' (teaching them, he went)."],
