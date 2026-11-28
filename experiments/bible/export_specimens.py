@@ -36,6 +36,46 @@ def r2(a, nd=2):
     return np.round(np.asarray(a, float), nd).tolist()
 
 
+def label_note(rows):
+    n = {v: sum(1 for r in rows[v] for f in FEATURES for s in r["sources"][f].values() if s == "gold")
+         for v in VARIETIES}
+    return (f"Labels: spaCy for the WEB, rules on overt markers for the JNT, replaced by hand labels "
+            f"where a word was annotated ({n['web']} WEB and {n['jnt']} JNT labels).")
+
+
+def collections(model):
+    """Cross-collection summaries (numbers only) from compare.py, heads_collections.py and
+    lince_switch.py, if they have been run."""
+    def load(p):
+        p = Path(p)
+        return json.loads(p.read_text()) if p.exists() else {}
+    cmp_ = load(f"specimens/corpora_{model}.json")
+    hc = load(f"specimens/corpora_heads_{model}.json").get("collections", {})
+    ls = load(f"specimens/lince_switch_{model}.json")
+    out = {"mid_layers": cmp_.get("mid_layers"), "spearman": cmp_.get("summary", {}), "rows": []}
+    for key, c in cmp_.get("collections", {}).items():
+        row = {"key": key, "label": c["label"], "distance": c["distance"],
+               "tokens_per_word": c["tokens_per_word"], "transfer": {}, "unmarked": {}}
+        for f, fe in c["features"].items():
+            if "transfer_mid" in fe:
+                row["transfer"][f] = fe["transfer_mid"]
+            if "unmarked" in fe:
+                u = fe["unmarked"]
+                row["unmarked"][f] = [u["transfer_mid_marked"], u["transfer_mid_unmarked"], u["n_pos_unmarked"]]
+        h = hc.get(key, {})
+        if h:
+            row["be_ing_4_5"] = h.get("be_ing", {}).get("head_4_5")
+            row["prev_ablation_k20"] = {f: fe["runs"][-1]["prev_word_heads"]
+                                        for f, fe in h.get("ablation", {}).items() if "runs" in fe}
+        out["rows"].append(row)
+    if ls:
+        best = lambda k: max(ls[k]["acc"])
+        out["lince"] = {"sentences": ls["sentences"], "tokenisation": ls["tokenisation"],
+                        **{k: {"best": best(k), "baselines": ls[k]["baselines"]}
+                           for k in ("language", "switch", "anticipation")}}
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="pythia-410m")
@@ -197,7 +237,7 @@ def main():
     data = {"model": meta["model"], "n_layers": L, "n_heads": H, "readout_layer": readout,
             "features": list(FEATURES), "varieties": {"web": "World English Bible",
                                                       "jnt": "Jamaican New Testament"},
-            "label_note": "Labels are automatic (spaCy for WEB, rules for JNT) until hand annotation is in.",
+            "label_note": label_note(rows),
             "credit": "Jamaican New Testament © 2012 Bible Society of the West Indies; "
                       "World English Bible, public domain (ebible.org).",
             "heads": [[l, h, describe(l, h).rstrip("; ")] for l, h in chosen],
@@ -208,7 +248,9 @@ def main():
                                              if k in ("acc_jntr", "ablation")}
                                          for f, e in orth.get("features", {}).items()}},
             "pairs": pairs, "maps": maps, "probes": probes, "ablation": ablation,
-            "cosine": {f: probes_json["features"][f].get("cosine_web_jnt") for f in FEATURES}}
+            "cosine": {f: probes_json["features"][f].get("cosine_web_jnt") for f in FEATURES},
+            "selectivity": {k: c for k, c in controls.get("static", {}).get("control_task", {}).items()},
+            "collections": collections(a.model)}
     js = "window.REAL_SPECIMENS=" + json.dumps(data, ensure_ascii=False, separators=(",", ":")) + ";\n"
     Path(a.out).write_text(js, encoding="utf-8")
     print(f"{len(pairs)} pairs, {len(chosen)} heads -> {a.out} ({len(js) / 1024:.0f} KB)")

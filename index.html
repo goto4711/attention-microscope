@@ -201,6 +201,21 @@ footer{color:var(--mute);font-size:13px;font-weight:300}
     </section>
   </div>
 
+  <div class="grid2" id="rcollwrap" hidden>
+    <section class="panel">
+      <h2><span class="dc-highlight">Across the collections</span></h2>
+      <p class="note" id="rcollnote"></p>
+      <div class="scroll"><div id="rcoll"></div></div>
+    </section>
+    <section class="panel">
+      <h2><span class="dc-highlight">Without the standard marking</span></h2>
+      <p class="note">Hand-labelled words that carry the feature without the standard's marking (<i>two mile</i>, <i>he come up there yesterday</i>), next to words that carry it with the marking, each scored against the same words without the feature. The Standard English direction, layers 8–16; 0.5 = chance.</p>
+      <div id="runm"></div>
+      <h3 style="margin-top:18px">Code-switching (LinCE, Hindi–English)</h3>
+      <div id="rlince"></div>
+    </section>
+  </div>
+
   <section class="tip">
     <div class="k">Reading the real specimens</div>
     <ul class="how" id="rhow"></ul>
@@ -532,6 +547,31 @@ function renderMaps(){const mw=heat($('hmweb'),feat+'_web'),mj=heat($('hmjnt'),f
     metric=='prev'?`Attention from each word to the word just before it, whatever that word is (up to ${Math.round(Math.max(mw,mj)*100)}%).`:
     `Colour from 0 to the highest value in each grid (WEB ${(mw*100).toFixed(0)}%, JNT ${(mj*100).toFixed(0)}%).`}
 
+function renderCollections(){const C=R.collections;if(!C||!C.rows||!C.rows.length)return;$('rcollwrap').hidden=false;
+  const ml=C.mid_layers||[8,16],sp=(C.spearman||{})[feat];
+  $('rcollnote').innerHTML=`Words with the standard marking (found by spaCy; rules for the Jamaican NT), projected onto the <b>${feat}</b> direction learned on the World English Bible: ROC AUC, layers ${ml[0]}–${ml[1]} (1 = separates perfectly, 0.5 = chance). `+
+    (sp?`Spearman correlation with distance from Standard English: ρ = ${sp.spearman_rho.toFixed(2)} (p = ${sp.p<.001?'< 0.001':sp.p.toFixed(3)}, ${sp.n} collections). `:'')+
+    `Head 4.5: share of a progressive verb's attention that goes to its form of <i>be</i> (or Jamaican <i>a</i>). Last column: signal left when the 20 strongest previous-word heads are silenced.`;
+  const bar=(x,lo,hi,txt)=>x==null?'<td class="n">–</td>':`<td class="n"><span class="cb"><i style="width:${Math.max(0,Math.min(1,(x-lo)/(hi-lo)))*100}%"></i><span>${txt}</span></span></td>`;
+  let h=`<table class="abt"><thead><tr><th></th><th>Distance</th><th>Tokens / word</th><th>WEB direction</th><th>Head 4.5 be→ing</th><th>Prev-word heads off</th></tr></thead><tbody>`;
+  C.rows.forEach(r=>{const cls=r.key=='web'?'web':'jnt',rs=r.key=='jntr'?' rs':'';const t=r.transfer[feat],pa=(r.prev_ablation_k20||{})[feat];
+    h+=`<tr class="${cls}${rs}"><th>${esc(r.label)}</th><td class="n">${r.distance==null?'–':r.distance.toFixed(2)}</td><td class="n">${r.tokens_per_word.toFixed(2)}</td>${bar(t,.5,1,t==null?'':t.toFixed(2))}${bar(r.be_ing_4_5,0,1,r.be_ing_4_5==null?'':Math.round(r.be_ing_4_5*100)+'%')}${bar(pa,0,1.1,pa==null?'':Math.round(pa*100)+'%')}</tr>`});
+  $('rcoll').innerHTML=h+'</tbody></table>';
+  const um=C.rows.filter(r=>r.unmarked&&r.unmarked[feat]);
+  $('runm').innerHTML=um.length?`<table class="abt"><thead><tr><th></th><th>With marking</th><th>Without</th><th>n without</th></tr></thead><tbody>`+
+    um.map(r=>{const [m,u,n]=r.unmarked[feat];return`<tr class="jnt"><th>${esc(r.label)}${r.key=='jnt'?'*':''}</th>${bar(m,.5,1,m==null?'–':m.toFixed(2))}${bar(u,.5,1,u.toFixed(2))}<td class="n">${n}</td></tr>`}).join('')+
+    `</tbody></table><p class="note" style="margin-top:6px">${um.some(r=>r.key=='jnt')?'* Jamaican NT: “with marking” is the Creole marker (<i>did</i>, <i>dem</i>), “without” the forms the hand annotator found with no marker at all. ':''}Few words without the marking: read these as indications.</p>`
+    :`<p class="note">No hand labels for <b>${feat}</b> without the standard marking yet.</p>`;
+  const L=C.lince;
+  if(L){const row=(n,k,d)=>`<tr class="jnt"><th>${n}</th>${bar(L[k].best,.5,1,L[k].best.toFixed(2))}${bar(L[k].baselines.word_type,.5,1,L[k].baselines.word_type.toFixed(2))}</tr><tr><td colspan="3" class="note" style="padding:0 4px 6px;font-size:12px">${d}</td></tr>`;
+    $('rlince').innerHTML=`<p class="note">${L.sentences} code-mixed posts, with the corpus's own word-level language tags. Balanced accuracy of the best layer's probe, next to a probe that only knows which word it is.</p><table class="abt"><thead><tr><th></th><th>Probe</th><th>Word only</th></tr></thead><tbody>`+
+      row('Language of the word','language','Mostly lexical: the word alone gets most of the way.')+
+      row('Switch here','switch','The word switches language from the one before: the model reads the context.')+
+      row('Switch next','anticipation','The next word will switch: barely above the word alone.')+
+      `</tbody></table><p class="note" style="margin-top:6px">Tokens per word: English ${L.tokenisation.english_tokens_per_word.toFixed(2)}, Hindi ${L.tokenisation.hindi_tokens_per_word.toFixed(2)}. The previous-word heads attend across a switch as much as without one.</p>`}}
+function selNote(){const c=(R.selectivity||{})[feat+'_jnt'];if(!c)return'';const i=c.layers.indexOf(8),j=c.layers.indexOf(12);if(i<0||j<0)return'';
+  const sel=c.selectivity.slice(i,j+1),lo=Math.min(...sel),hi=Math.max(...sel);
+  return`<p class="note" style="margin-top:6px">Control task (Hewitt &amp; Liang): a probe given random labels per word type reaches ${Math.round(c.control[i]*100)}% on the Jamaican text at layer 8, so the Jamaican probe is ${(lo*100).toFixed(0)}–${(hi*100).toFixed(0)} points more selective at layers 8–12.${hi<.08?' Much of its accuracy could come from memorising words; the head ablations are the firmer evidence.':''}</p>`}
 function renderAblation(){const rl=R.readout_layer;
   $('abnote').innerHTML=`Heads below layer ${rl} are silenced and we measure how much of the feature signal is left at layer ${rl} (100% = no effect). <b>Marker heads</b>: the heads that attend most to the marker. <b>Previous-word heads</b>: the heads that attend most to whatever word comes before. <b>Respelled</b>: the Jamaican text in English spelling, Creole grammar kept.`;
   const pct=x=>x==null?'<td class="n">–</td>':`<td class="n"><span class="cb"><i style="width:${Math.max(0,Math.min(110,x*100))/1.1}%"></i><span>${Math.round(x*100)}%</span></span></td>`;
@@ -556,12 +596,12 @@ function renderAblation(){const rl=R.readout_layer;
   const oj=((R.orthography.features||{})[feat]||{}).acc_jntr;
   if(oj){const n=oj.length;s+=`<polyline points="${oj.map((a,l)=>`${pad+l/(n-1)*(W-pad-6)},${H-pad-(a-.5)/.5*(H-2*pad)}`).join(' ')}" fill="none" stroke="var(--dc-purple)" stroke-width="2" stroke-dasharray="5 4"/>`}
   s+=`<text x="${pad}" y="${H-4}" font-size="10" fill="var(--mute)">layer 0</text><text x="${W-6}" y="${H-4}" font-size="10" fill="var(--mute)" text-anchor="end">layer ${R.n_layers}</text></svg>`;
-  $('rprobe').innerHTML=`<p class="note">Balanced accuracy (%) of a linear probe for <b>${feat}</b> on the residual stream: <span style="color:var(--dc-blue);font-weight:700">Standard English</span>, <span style="color:var(--dc-purple);font-weight:700">Jamaican Creole</span>, dashed: Jamaican respelled in English spelling. Change the feature in the head map.</p>`+s}
+  $('rprobe').innerHTML=`<p class="note">Balanced accuracy (%) of a linear probe for <b>${feat}</b> on the residual stream: <span style="color:var(--dc-blue);font-weight:700">Standard English</span>, <span style="color:var(--dc-purple);font-weight:700">Jamaican Creole</span>, dashed: Jamaican respelled in English spelling. Change the feature in the head map.</p>`+s+selNote()}
 
 function render(){if($('real').hidden)return;
   $('vWeb').setAttribute('aria-pressed',va=='web');$('vJnt').setAttribute('aria-pressed',va=='jnt');
   $('rverse').value=pi;$('rhead').value=hk;$('rfeat').value=feat;$('rmetric').value=metric;
-  drawSpec();renderGrid();renderLens();renderMaps();renderAblation()}
+  drawSpec();renderGrid();renderLens();renderMaps();renderAblation();renderCollections()}
 
 $('rverse').innerHTML=R.pairs.map((p,i)=>`<option value="${i}">${p.ref}</option>`).join('');
 $('rhead').innerHTML=R.heads.map(([l,h,w],i)=>`<option value="${i}">Head ${l}.${h} · ${esc(w)}</option>`).join('');
@@ -572,6 +612,8 @@ $('rhow').innerHTML=[
   `Past in Standard English sits on the verb (<i>woke</i>); in Jamaican Creole it often sits on a marker before the verb (<i>did kom</i>). For the model to know a Jamaican verb is past, a head has to carry that information from the marker to the verb, and a few heads do: silencing them removes most of the signal.`,
   `But those heads are the model's generic previous-word heads: they look at whatever word comes before, not at <i>did</i> or <i>a</i> as such (head map: “Marker attention beyond the previous-word habit”). English has a head made for its progressive, 4.5, which links an <i>-ing</i> verb to <i>was/were</i>; on Jamaican <i>a</i> + verb it hardly responds. The Creole marking gets through by adjacency, not through the machinery the model built for the standard.`,
   `Spelling is not the reason: respelled in English spelling with the Creole grammar kept, the Jamaican text still depends on the same heads (table, “respelled”).`,
+  `Where the feature has no marking at all, the Standard English direction does not see it: hand-labelled Jamaican past and plural without a marker score at chance, and in the English varieties forms like <i>two mile</i> drop well below their marked counterparts (“Without the standard marking”). The model sees a feature when the marking the standard uses is on the word.`,
+  `Across the collections, the Standard English directions keep working for the English varieties (about 0.99) and fall away for code-switched posts and the Jamaican NT; transfer correlates with distance from the standard. English's progressive head 4.5 works in every English variety and in LinCE, not in the Jamaican NT.`,
   `Plural in Jamaican Creole comes after the noun (<i>di man dem</i>). Pythia reads left to right, so the noun cannot yet see its <i>dem</i>; the label sits on <i>dem</i>.`,
   `${esc(R.label_note)}`].map(t=>`<li>${t}</li>`).join('');
 $('rcredit').textContent=`Model: ${R.model}. ${R.credit}`;

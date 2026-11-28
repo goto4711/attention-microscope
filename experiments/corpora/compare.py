@@ -51,15 +51,27 @@ EXTRA = {"jntr": ("Jamaican NT, respelled", 0.89)}
 MID = slice(8, 17)
 
 
-def xy(z, rows, f):
+def jnt_unmarked(f):
+    """JNT hand labels the rules left unlabelled (auto empty): forms without an overt marker."""
+    import csv
+    p = Path("data/annotation") / f"jnt_{f}.csv"
+    if not p.exists():
+        return set()
+    return {(r["ref"], int(r["word_idx"])) for r in csv.DictReader(open(p, encoding="utf-8"))
+            if r["gold"].strip() == "1" and not r["auto"].strip()}
+
+
+def xy(z, rows, f, key=None):
     idx, y, src, unm = [], [], [], []
+    ju = jnt_unmarked(f) if key == "jnt" else set()
     for k, (vi, wi) in enumerate(zip(z["verse"], z["word"])):
         lab = rows[vi]["labels"][f].get(str(wi))
         if lab is not None:
             idx.append(k)
             y.append(lab)
             src.append(rows[vi].get("sources", {}).get(f, {}).get(str(wi), "?"))
-            unm.append(rows[vi].get("marking", {}).get(f, {}).get(str(wi)) == "unmarked")
+            unm.append(rows[vi].get("marking", {}).get(f, {}).get(str(wi)) == "unmarked"
+                       or (rows[vi]["ref"], int(wi)) in ju)
     return np.array(idx, int), np.array(y, int), src, np.array(unm, bool)
 
 
@@ -87,7 +99,7 @@ def main():
         ent = {"label": label, "distance": dist, "sentences": len(rows),
                "tokens_per_word": round(float(t.mean()), 3), "features": {}}
         for f in FEATURES:
-            idx, y, src, unm = xy(z, rows, f)
+            idx, y, src, unm = xy(z, rows, f, key)
             fe = {"n_pos": int(y.sum()), "n_neg": int(len(y) - y.sum()),
                   "sources": {s: src.count(s) for s in set(src)}}
             ent["features"][f] = fe
