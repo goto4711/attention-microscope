@@ -456,9 +456,11 @@ const ro=new ResizeObserver(()=>cur&&drawSpec());ro.observe($('specwrap'));
 <!-- Real specimens from Pythia (experiments/bible/export_specimens.py). Optional: without
      this file the page is the toy only. A script, not JSON, so it also loads from file://. -->
 <script src="specimens/real-specimens.js"></script>
+<!-- Public version (no Jamaican NT text): used when real-specimens.js is absent. -->
+<script src="specimens/public-specimens.js"></script>
 <script>
 {
-const R=window.REAL_SPECIMENS;
+const R=window.REAL_SPECIMENS||window.PUBLIC_SPECIMENS,PUB=!window.REAL_SPECIMENS;
 const $=id=>document.getElementById(id);
 if(R){
 $('modesw').hidden=false;
@@ -466,7 +468,7 @@ const FT={plural:'pl',past:'past',progressive:'prog'};
 const VN={web:'Standard English',jnt:'Jamaican Creole'};
 const VC={web:'--dc-blue',jnt:'--dc-purple'};
 const METRICS={marker:'Attention to the marker',excess:'Marker attention beyond the previous-word habit',prev:'Attention to the previous word (any word)',decode:'Feature decodable from head output',visV:'W_V visibility',visQ:'W_Q visibility',visK:'W_K visibility'};
-let pi=0,va='jnt',hk=0,focus=0,feat='past',metric='marker';
+let pi=0,va=PUB?'web':'jnt',hk=0,focus=0,feat='past',metric='marker';
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const col=(x,m,c)=>`color-mix(in srgb,var(${c}) ${Math.max(0,Math.min(100,x/m*100))*.92}%,#fff)`;
 const fg=(x,m)=>x/m>.55?'#fff':'var(--ink)';
@@ -559,8 +561,9 @@ function renderCollections(){const C=R.collections;if(!C||!C.rows||!C.rows.lengt
   $('rcoll').innerHTML=h+'</tbody></table>';
   const um=C.rows.filter(r=>r.unmarked&&r.unmarked[feat]);
   $('runm').innerHTML=um.length?`<table class="abt"><thead><tr><th></th><th>With marking</th><th>Without</th><th>n without</th></tr></thead><tbody>`+
-    um.map(r=>{const [m,u,n]=r.unmarked[feat];return`<tr class="jnt"><th>${esc(r.label)}${r.key=='jnt'?'*':''}</th>${bar(m,.5,1,m==null?'–':m.toFixed(2))}${bar(u,.5,1,u.toFixed(2))}<td class="n">${n}</td></tr>`}).join('')+
-    `</tbody></table><p class="note" style="margin-top:6px">${um.some(r=>r.key=='jnt')?'* Jamaican NT: “with marking” is the Creole marker (<i>did</i>, <i>dem</i>), “without” the forms the hand annotator found with no marker at all. ':''}Few words without the marking: read these as indications.</p>`
+    um.map(r=>{const [m,u,n,mc,uc]=r.unmarked[feat];const ci=c=>c?`<br><span style="font-size:11px;color:var(--mute)">${c[0].toFixed(2)}–${c[1].toFixed(2)}</span>`:'';
+      return`<tr class="jnt"><th>${esc(r.label)}${r.key=='jnt'?'*':''}</th>${bar(m,.5,1,m==null?'–':m.toFixed(2))}${bar(u,.5,1,u.toFixed(2))}<td class="n">${n}</td></tr><tr><td></td><td class="n" style="padding-top:0">${ci(mc)}</td><td class="n" style="padding-top:0">${ci(uc)}</td><td></td></tr>`}).join('')+
+    `</tbody></table><p class="note" style="margin-top:6px">${um.some(r=>r.key=='jnt')?'* Jamaican NT: “with marking” is the Creole marker (<i>did</i>, <i>dem</i>), “without” the forms the hand annotator found with no marker at all. ':''}Small numbers: the grey ranges are 95% intervals from resampling whole sentences (500 draws).</p>`
     :`<p class="note">No hand labels for <b>${feat}</b> without the standard marking yet.</p>`;
   const L=C.lince;
   if(L){const row=(n,k,d)=>`<tr class="jnt"><th>${n}</th>${bar(L[k].best,.5,1,L[k].best.toFixed(2))}${bar(L[k].baselines.word_type,.5,1,L[k].baselines.word_type.toFixed(2))}</tr><tr><td colspan="3" class="note" style="padding:0 4px 6px;font-size:12px">${d}</td></tr>`;
@@ -608,7 +611,8 @@ $('rhead').innerHTML=R.heads.map(([l,h,w],i)=>`<option value="${i}">Head ${l}.${
 $('rfeat').innerHTML=R.features.map(f=>`<option>${f}</option>`).join('');
 $('rmetric').innerHTML=Object.entries(METRICS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
 $('rhow').innerHTML=[
-  `Each verse appears twice: in the World English Bible and in the Jamaican New Testament. Switch between them to see the same head at work on the two varieties.`,
+  PUB?`The verses come from the World English Bible. The Jamaican New Testament is analysed in the same way, verse by verse, but its text is copyrighted, so only the numbers appear here.`
+     :`Each verse appears twice: in the World English Bible and in the Jamaican New Testament. Switch between them to see the same head at work on the two varieties.`,
   `Past in Standard English sits on the verb (<i>woke</i>); in Jamaican Creole it often sits on a marker before the verb (<i>did kom</i>). For the model to know a Jamaican verb is past, a head has to carry that information from the marker to the verb, and a few heads do: silencing them removes most of the signal.`,
   `But those heads are the model's generic previous-word heads: they look at whatever word comes before, not at <i>did</i> or <i>a</i> as such (head map: “Marker attention beyond the previous-word habit”). English has a head made for its progressive, 4.5, which links an <i>-ing</i> verb to <i>was/were</i>; on Jamaican <i>a</i> + verb it hardly responds. The Creole marking gets through by adjacency, not through the machinery the model built for the standard.`,
   `Spelling is not the reason: respelled in English spelling with the Creole grammar kept, the Jamaican text still depends on the same heads (table, “respelled”).`,
@@ -630,7 +634,8 @@ $('rag').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b
 new ResizeObserver(()=>{if(!$('real').hidden)drawSpec()}).observe($('rspecwrap'));
 // start on a JNT past head and a past-marked verb, if there is one
 const ph=R.heads.findIndex(h=>/past marker in JNT/.test(h[2]));if(ph>=0)hk=ph;
-pi=Math.max(0,R.pairs.findIndex(p=>Object.values(p.jnt.labels.past).includes(1)));pickFocus();
+pi=Math.max(0,R.pairs.findIndex(p=>Object.values(p[va].labels.past).includes(1)));pickFocus();
+if(PUB){document.querySelector('.vsw').style.display='none';$('rwhy').insertAdjacentHTML('beforebegin','<p class="note" style="margin:0 0 6px">Verses from the World English Bible only: the Jamaican New Testament is copyrighted and is not quoted here. The Jamaican results in the panels below are numbers only.</p>')}
 {const p=P(),pf=Object.keys(p.labels.past).map(Number).find(i=>p.labels.past[i]===1&&p.readout[i]);if(pf!=null)focus=pf}
 let saved=null;try{saved=localStorage.getItem('am-mode')}catch(e){}
 if(saved=='real')setMode(true);

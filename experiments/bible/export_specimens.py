@@ -59,9 +59,11 @@ def collections(model):
         for f, fe in c["features"].items():
             if "transfer_mid" in fe:
                 row["transfer"][f] = fe["transfer_mid"]
+                row.setdefault("transfer_ci", {})[f] = fe.get("transfer_mid_ci")
             if "unmarked" in fe:
                 u = fe["unmarked"]
-                row["unmarked"][f] = [u["transfer_mid_marked"], u["transfer_mid_unmarked"], u["n_pos_unmarked"]]
+                row["unmarked"][f] = [u["transfer_mid_marked"], u["transfer_mid_unmarked"], u["n_pos_unmarked"],
+                                      u.get("transfer_mid_marked_ci"), u.get("transfer_mid_unmarked_ci")]
         h = hc.get(key, {})
         if h:
             row["be_ing_4_5"] = h.get("be_ing", {}).get("head_4_5")
@@ -82,8 +84,11 @@ def main():
     ap.add_argument("--n", type=int, default=8, help="verse pairs to export")
     ap.add_argument("--max-words", type=int, default=28)
     ap.add_argument("--heads", type=int, default=16, help="heads whose attention is exported")
-    ap.add_argument("--out", default="specimens/real-specimens.js")
+    ap.add_argument("--out", default=None)
+    ap.add_argument("--public", action="store_true",
+                    help="no JNT text: pairs keep only the WEB verse; writes specimens/public-specimens.js")
     a = ap.parse_args()
+    a.out = a.out or ("specimens/public-specimens.js" if a.public else "specimens/real-specimens.js")
     out = OUT / a.model
     meta = json.loads((out / "meta.json").read_text())
     L, H = meta["n_layers"], meta["n_heads"]
@@ -251,7 +256,14 @@ def main():
             "cosine": {f: probes_json["features"][f].get("cosine_web_jnt") for f in FEATURES},
             "selectivity": {k: c for k, c in controls.get("static", {}).get("control_task", {}).items()},
             "collections": collections(a.model)}
-    js = "window.REAL_SPECIMENS=" + json.dumps(data, ensure_ascii=False, separators=(",", ":")) + ";\n"
+    name = "REAL_SPECIMENS"
+    if a.public:  # the WEB is public domain; the JNT verses are not
+        data["pairs"] = [{"ref": p["ref"], "web": p["web"]} for p in pairs]
+        data["public"] = True
+        data["credit"] = ("World English Bible, public domain (ebible.org). The Jamaican New Testament "
+                          "(© 2012 Bible Society of the West Indies) is analysed but not quoted here.")
+        name = "PUBLIC_SPECIMENS"
+    js = f"window.{name}=" + json.dumps(data, ensure_ascii=False, separators=(",", ":")) + ";\n"
     Path(a.out).write_text(js, encoding="utf-8")
     print(f"{len(pairs)} pairs, {len(chosen)} heads -> {a.out} ({len(js) / 1024:.0f} KB)")
     print("heads:", [(l, h) for l, h in chosen])

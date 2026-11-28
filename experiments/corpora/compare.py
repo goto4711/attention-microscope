@@ -75,6 +75,21 @@ def xy(z, rows, f, key=None):
     return np.array(idx, int), np.array(y, int), src, np.array(unm, bool)
 
 
+def boot_ci(proj, y, groups, n=500, seed=0):
+    """95% interval of the mean AUC over the columns of proj, resampling sentences (clusters)."""
+    rng = np.random.default_rng(seed)
+    ug = np.unique(groups)
+    members = {g: np.where(groups == g)[0] for g in ug}
+    vals = []
+    for _ in range(n):
+        idx = np.concatenate([members[g] for g in rng.choice(ug, len(ug))])
+        yy = y[idx]
+        if yy.min() == yy.max():
+            continue
+        vals.append(np.mean([roc_auc_score(yy, proj[idx, c]) for c in range(proj.shape[1])]))
+    return [round(float(np.percentile(vals, 2.5)), 3), round(float(np.percentile(vals, 97.5)), 3)]
+
+
 def fit(X, y, C=0.05):
     sc = StandardScaler().fit(X)
     return sc, LogisticRegression(C=C, max_iter=3000, class_weight="balanced").fit(sc.transform(X), y)
@@ -114,16 +129,15 @@ def main():
             X, y, g = allX[keep], y[keep], z["verse"][idx][keep]
             D = P[f"{f}_web"]
             if key == "web":  # held-out: direction fitted on other folds
-                auc = []
+                proj = np.zeros((len(y), X.shape[1]))
                 for l in range(X.shape[1]):
-                    proj = np.zeros(len(y))
                     for tr, te in GroupKFold(5).split(X, y, g):
                         sc, clf = fit(X[tr, l], y[tr])
-                        w = clf.coef_[0] / sc.scale_
-                        proj[te] = X[te, l] @ w
-                    auc.append(roc_auc_score(y, proj))
+                        proj[te, l] = X[te, l] @ (clf.coef_[0] / sc.scale_)
             else:
-                auc = [roc_auc_score(y, X[:, l] @ D[l]) for l in range(X.shape[1])]
+                proj = np.einsum("nld,ld->nl", X, D)
+            auc = [roc_auc_score(y, proj[:, l]) for l in range(X.shape[1])]
+            fe["transfer_mid_ci"] = boot_ci(proj[:, MID], y, g)
             fe["transfer_auc"] = [round(float(x), 3) for x in auc]
             inh = []
             for l in a.layers:
@@ -138,14 +152,17 @@ def main():
             # without be) against the same negatives, next to the standard-marked positives
             pos_u = unm & (ally == 1)
             if pos_u.sum() >= 10 and key != "web":
-                X, y = allX, ally
+                y, gg = ally, z["verse"][idx]
+                pm = np.einsum("nld,ld->nl", allX[:, MID], D[MID])
                 neg, pos_m = y == 0, (y == 1) & ~unm
                 def mid_auc(pos):
                     sel = pos | neg
-                    return round(float(np.mean([roc_auc_score(y[sel], X[sel, l] @ D[l])
-                                                for l in range(MID.start, MID.stop)])), 3)
-                fe["unmarked"] = {"n_pos_unmarked": int(pos_u.sum()), "transfer_mid_unmarked": mid_auc(pos_u),
-                                  "transfer_mid_marked": mid_auc(pos_m) if pos_m.sum() >= 10 else None}
+                    return (round(float(np.mean([roc_auc_score(y[sel], pm[sel, c]) for c in range(pm.shape[1])])), 3),
+                            boot_ci(pm[sel], y[sel], gg[sel]))
+                (u, uci), m = mid_auc(pos_u), (mid_auc(pos_m) if pos_m.sum() >= 10 else (None, None))
+                fe["unmarked"] = {"n_pos_unmarked": int(pos_u.sum()), "transfer_mid_unmarked": u,
+                                  "transfer_mid_unmarked_ci": uci, "transfer_mid_marked": m[0] if m else None,
+                                  "transfer_mid_marked_ci": m[1] if m else None}
         res["collections"][key] = ent
         print(f"{label:34s} {dist if dist is not None else '-':>5} tok/w {ent['tokens_per_word']:.2f} | " +
               " | ".join(f"{f[:4]} {fe.get('transfer_mid', '-')} (in {fe.get('inhouse_acc', [None]*4)[3]}, "
@@ -163,7 +180,8 @@ def main():
             if "unmarked" in fe:
                 u = fe["unmarked"]
                 print(f"{c['label']:34s} {f:12s} WEB direction, layers 8-16: standard-marked "
-                      f"{u['transfer_mid_marked']} vs unmarked {u['transfer_mid_unmarked']} "
+                      f"{u['transfer_mid_marked']} {u['transfer_mid_marked_ci']} vs unmarked "
+                      f"{u['transfer_mid_unmarked']} {u['transfer_mid_unmarked_ci']} "
                       f"(n unmarked {u['n_pos_unmarked']})")
     write_json(f"specimens/corpora_{a.model}.json", res)
     print(f"-> specimens/corpora_{a.model}.json")
