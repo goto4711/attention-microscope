@@ -94,8 +94,12 @@ def main():
             if min(fe["n_pos"], fe["n_neg"]) < 15:
                 fe["skipped"] = "fewer than 15 examples in a class"
                 continue
-            X = z["X"][idx].astype(np.float32)
-            g = z["verse"][idx]
+            # hand-labelled unmarked positives are tested separately (below); the main
+            # transfer and in-house figures use the standard-marked labels only, so that
+            # collections with and without hand annotation stay comparable
+            allX, ally = z["X"][idx].astype(np.float32), y
+            keep = ~(unm & (y == 1))
+            X, y, g = allX[keep], y[keep], z["verse"][idx][keep]
             D = P[f"{f}_web"]
             if key == "web":  # held-out: direction fitted on other folds
                 auc = []
@@ -120,8 +124,9 @@ def main():
             fe["transfer_mid"] = round(float(np.mean(auc[MID])), 3)
             # hand-labelled unmarked forms (plural without -s, past without -ed, progressive
             # without be) against the same negatives, next to the standard-marked positives
-            pos_u = unm & (y == 1)
+            pos_u = unm & (ally == 1)
             if pos_u.sum() >= 10 and key != "web":
+                X, y = allX, ally
                 neg, pos_m = y == 0, (y == 1) & ~unm
                 def mid_auc(pos):
                     sel = pos | neg
