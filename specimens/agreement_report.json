@@ -1,0 +1,79 @@
+{
+ "note": "second annotator vs first annotator (CA) on a stratified subset",
+ "tabs": {
+  "JNT Plural": {
+   "n": 20,
+   "agreement": 1.0,
+   "kappa_3way": 1.0,
+   "n_binary": 14,
+   "agreement_binary": 1.0,
+   "kappa_binary": 1.0,
+   "confusion": {
+    "0|0": 7,
+    "1|1": 7,
+    "x|x": 6
+   }
+  },
+  "JNT Past": {
+   "n": 20,
+   "agreement": 0.95,
+   "kappa_3way": 0.925,
+   "n_binary": 14,
+   "agreement_binary": 1.0,
+   "kappa_binary": 1.0,
+   "confusion": {
+    "0|0": 7,
+    "1|1": 7,
+    "x|1": 1,
+    "x|x": 5
+   }
+  },
+  "JNT Progressive": {
+   "n": 20,
+   "agreement": 0.8,
+   "kappa_3way": 0.697,
+   "n_binary": 14,
+   "agreement_binary": 0.857,
+   "kappa_binary": 0.714,
+   "confusion": {
+    "0|0": 7,
+    "1|0": 2,
+    "1|1": 5,
+    "x|0": 2,
+    "x|x": 4
+   }
+  },
+  "Plural, no -s": {
+   "n": 20,
+   "agreement": 0.85,
+   "kappa_3way": 0.776,
+   "n_binary": 12,
+   "agreement_binary": 0.917,
+   "kappa_binary": 0.833,
+   "confusion": {
+    "0|0": 5,
+    "0|x": 2,
+    "1|0": 1,
+    "1|1": 6,
+    "x|x": 6
+   }
+  },
+  "Past, no -ed": {
+   "n": 20,
+   "agreement": 0.85,
+   "kappa_3way": 0.772,
+   "n_binary": 14,
+   "agreement_binary": 1.0,
+   "kappa_binary": 1.0,
+   "confusion": {
+    "0|0": 7,
+    "1|1": 7,
+    "x|0": 3,
+    "x|x": 3
+   }
+  }
+ },
+ "second_annotator": "CB",
+ "first_annotator": "CA",
+ "provenance": "Second annotator CB's own labels (confirmed by TB, 28 Nov 2026); the returned file was named annotate_second_AI_checked_CB.xlsx"
+}

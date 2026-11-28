@@ -1,0 +1,136 @@
+{
+ "tokenizer": "EleutherAI/pythia-410m",
+ "word": "run of letters with internal ' or -, tokenised as ' word'",
+ "max_words": 300000,
+ "collections": {
+  "web": {
+   "label": "World English Bible",
+   "distance": 0.0,
+   "words": 174826,
+   "types": 6648,
+   "tokens_per_word": 1.082,
+   "single_token": 0.943,
+   "three_plus": 0.022
+  },
+  "ice-ja-written": {
+   "label": "ICE Jamaica, written",
+   "distance": 0.2,
+   "words": 300000,
+   "types": 27311,
+   "tokens_per_word": 1.121,
+   "single_token": 0.914,
+   "three_plus": 0.026
+  },
+  "ice-ja-spoken": {
+   "label": "ICE Jamaica, spoken",
+   "distance": 0.35,
+   "words": 300000,
+   "types": 12551,
+   "tokens_per_word": 1.1,
+   "single_token": 0.913,
+   "three_plus": 0.01
+  },
+  "aapb-howard": {
+   "label": "Howard Univ. TV oral histories",
+   "distance": 0.26,
+   "words": 300000,
+   "types": 15493,
+   "tokens_per_word": 1.061,
+   "single_token": 0.948,
+   "three_plus": 0.008
+  },
+  "aapb-eotp": {
+   "label": "AAPB interviews (eotp-interviews)",
+   "distance": 0.26,
+   "words": 203993,
+   "types": 9882,
+   "tokens_per_word": 1.07,
+   "single_token": 0.945,
+   "three_plus": 0.012
+  },
+  "ice-in-written": {
+   "label": "ICE India, written",
+   "distance": 0.34,
+   "words": 300000,
+   "types": 28650,
+   "tokens_per_word": 1.172,
+   "single_token": 0.893,
+   "three_plus": 0.044
+  },
+  "ice-in-spoken": {
+   "label": "ICE India, spoken",
+   "distance": 0.34,
+   "words": 300000,
+   "types": 14856,
+   "tokens_per_word": 1.105,
+   "single_token": 0.92,
+   "three_plus": 0.019
+  },
+  "wpa": {
+   "label": "WPA narratives (1930s)",
+   "distance": 0.37,
+   "words": 300000,
+   "types": 16246,
+   "tokens_per_word": 1.13,
+   "single_token": 0.895,
+   "three_plus": 0.021
+  },
+  "coraal": {
+   "label": "CORAAL (DCA, ROC)",
+   "distance": 0.37,
+   "words": 300000,
+   "types": 10558,
+   "tokens_per_word": 1.067,
+   "single_token": 0.942,
+   "three_plus": 0.006
+  },
+  "jnt": {
+   "label": "Jamaican New Testament",
+   "distance": 0.89,
+   "words": 253532,
+   "types": 2747,
+   "tokens_per_word": 1.519,
+   "single_token": 0.593,
+   "three_plus": 0.096
+  },
+  "lince": {
+   "label": "LinCE Hindi–English",
+   "distance": 0.57,
+   "words": 122709,
+   "types": 20159,
+   "tokens_per_word": 1.362,
+   "single_token": 0.728,
+   "three_plus": 0.073,
+   "by_language_tag": {
+    "untagged (test split)": {
+     "words": 30172,
+     "types": null,
+     "tokens_per_word": 1.362,
+     "single_token": 0.727,
+     "three_plus": 0.072
+    },
+    "English": {
+     "words": 62673,
+     "types": null,
+     "tokens_per_word": 1.112,
+     "single_token": 0.913,
+     "three_plus": 0.019
+    },
+    "named entity": {
+     "words": 6782,
+     "types": null,
+     "tokens_per_word": 2.09,
+     "single_token": 0.285,
+     "three_plus": 0.299
+    },
+    "Hindi (romanised)": {
+     "words": 22405,
+     "types": null,
+     "tokens_per_word": 1.819,
+     "single_token": 0.358,
+     "three_plus": 0.15
+    }
+   }
+  }
+ }
+}

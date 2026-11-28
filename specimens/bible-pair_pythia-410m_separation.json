@@ -1,0 +1,536 @@
+{
+ "model": "EleutherAI/pythia-410m",
+ "layers": [
+  8,
+  12
+ ],
+ "adverbs": [
+  [
+   "jos",
+   "just"
+  ],
+  [
+   "stil",
+   "still"
+  ],
+  [
+   "aalwiez",
+   "always"
+  ]
+ ],
+ "top_heads": 5,
+ "sets": {
+  "jnt_past": {
+   "n": 400,
+   "n_neg": 227,
+   "top_marker_heads": [
+    [
+     21,
+     2
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     3,
+     1
+    ],
+    [
+     5,
+     2
+    ],
+    [
+     23,
+     13
+    ]
+   ],
+   "attn_to_marker_top": {
+    "original": 2.879,
+    "separated": 0.273,
+    "control": 2.788
+   },
+   "readout": {
+    "own": {
+     "L8": {
+      "gap_original": 1.929,
+      "detected_original": 0.973,
+      "separated": {
+       "jos": {
+        "retained": 0.538,
+        "detected": 0.56
+       },
+       "stil": {
+        "retained": 0.496,
+        "detected": 0.465
+       },
+       "aalwiez": {
+        "retained": 0.557,
+        "detected": 0.603
+       },
+       "pooled": {
+        "retained": 0.53,
+        "detected": 0.542
+       }
+      },
+      "control": {
+       "jos": {
+        "retained": 0.993,
+        "detected": 0.973
+       },
+       "stil": {
+        "retained": 0.945,
+        "detected": 0.955
+       },
+       "aalwiez": {
+        "retained": 1.054,
+        "detected": 0.975
+       },
+       "pooled": {
+        "retained": 0.997,
+        "detected": 0.968
+       }
+      }
+     },
+     "L12": {
+      "gap_original": 1.403,
+      "detected_original": 0.94,
+      "separated": {
+       "jos": {
+        "retained": 0.65,
+        "detected": 0.73
+       },
+       "stil": {
+        "retained": 0.595,
+        "detected": 0.662
+       },
+       "aalwiez": {
+        "retained": 0.578,
+        "detected": 0.637
+       },
+       "pooled": {
+        "retained": 0.607,
+        "detected": 0.677
+       }
+      },
+      "control": {
+       "jos": {
+        "retained": 0.984,
+        "detected": 0.945
+       },
+       "stil": {
+        "retained": 0.956,
+        "detected": 0.932
+       },
+       "aalwiez": {
+        "retained": 1.056,
+        "detected": 0.955
+       },
+       "pooled": {
+        "retained": 0.999,
+        "detected": 0.944
+       }
+      }
+     }
+    },
+    "web": {
+     "L8": {
+      "gap_original": 0.634,
+      "detected_original": 0.642,
+      "separated": {
+       "jos": {
+        "retained": 0.644,
+        "detected": 0.537
+       },
+       "stil": {
+        "retained": 0.881,
+        "detected": 0.613
+       },
+       "aalwiez": {
+        "retained": 0.505,
+        "detected": 0.468
+       },
+       "pooled": {
+        "retained": 0.676,
+        "detected": 0.539
+       }
+      },
+      "control": {
+       "jos": {
+        "retained": 0.978,
+        "detected": 0.63
+       },
+       "stil": {
+        "retained": 0.906,
+        "detected": 0.6
+       },
+       "aalwiez": {
+        "retained": 1.115,
+        "detected": 0.703
+       },
+       "pooled": {
+        "retained": 1.0,
+        "detected": 0.644
+       }
+      }
+     },
+     "L12": {
+      "gap_original": 0.645,
+      "detected_original": 0.69,
+      "separated": {
+       "jos": {
+        "retained": 0.542,
+        "detected": 0.5
+       },
+       "stil": {
+        "retained": 0.74,
+        "detected": 0.585
+       },
+       "aalwiez": {
+        "retained": 0.679,
+        "detected": 0.557
+       },
+       "pooled": {
+        "retained": 0.654,
+        "detected": 0.547
+       }
+      },
+      "control": {
+       "jos": {
+        "retained": 0.91,
+        "detected": 0.64
+       },
+       "stil": {
+        "retained": 0.975,
+        "detected": 0.68
+       },
+       "aalwiez": {
+        "retained": 1.146,
+        "detected": 0.743
+       },
+       "pooled": {
+        "retained": 1.011,
+        "detected": 0.688
+       }
+      }
+     }
+    }
+   },
+   "attn_to_adverb_top": 2.668
+  },
+  "jnt_progressive": {
+   "n": 400,
+   "n_neg": 296,
+   "top_marker_heads": [
+    [
+     7,
+     2
+    ],
+    [
+     3,
+     1
+    ],
+    [
+     21,
+     2
+    ],
+    [
+     5,
+     2
+    ],
+    [
+     23,
+     11
+    ]
+   ],
+   "attn_to_marker_top": {
+    "original": 2.611,
+    "separated": 0.43,
+    "control": 2.64
+   },
+   "readout": {
+    "own": {
+     "L8": {
+      "gap_original": 2.756,
+      "detected_original": 0.968,
+      "separated": {
+       "jos": {
+        "retained": 0.222,
+        "detected": 0.092
+       },
+       "stil": {
+        "retained": 0.102,
+        "detected": 0.058
+       },
+       "aalwiez": {
+        "retained": 0.226,
+        "detected": 0.138
+       },
+       "pooled": {
+        "retained": 0.183,
+        "detected": 0.096
+       }
+      },
+      "control": {
+       "jos": {
+        "retained": 0.971,
+        "detected": 0.988
+       },
+       "stil": {
+        "retained": 0.981,
+        "detected": 0.975
+       },
+       "aalwiez": {
+        "retained": 0.934,
+        "detected": 0.965
+       },
+       "pooled": {
+        "retained": 0.962,
+        "detected": 0.976
+       }
+      }
+     },
+     "L12": {
+      "gap_original": 1.888,
+      "detected_original": 0.965,
+      "separated": {
+       "jos": {
+        "retained": 0.239,
+        "detected": 0.188
+       },
+       "stil": {
+        "retained": 0.192,
+        "detected": 0.107
+       },
+       "aalwiez": {
+        "retained": 0.17,
+        "detected": 0.115
+       },
+       "pooled": {
+        "retained": 0.201,
+        "detected": 0.137
+       }
+      },
+      "control": {
+       "jos": {
+        "retained": 0.922,
+        "detected": 0.938
+       },
+       "stil": {
+        "retained": 0.918,
+        "detected": 0.935
+       },
+       "aalwiez": {
+        "retained": 0.932,
+        "detected": 0.94
+       },
+       "pooled": {
+        "retained": 0.924,
+        "detected": 0.938
+       }
+      }
+     }
+    },
+    "web": {
+     "L8": {
+      "gap_original": 0.068,
+      "detected_original": 0.517,
+      "separated": {
+       "jos": {
+        "retained": 1.803,
+        "detected": 0.568
+       },
+       "stil": {
+        "retained": 2.058,
+        "detected": 0.598
+       },
+       "aalwiez": {
+        "retained": 2.278,
+        "detected": 0.623
+       },
+       "pooled": {
+        "retained": 2.046,
+        "detected": 0.596
+       }
+      },
+      "control": {
+       "jos": {
+        "retained": 0.262,
+        "detected": 0.445
+       },
+       "stil": {
+        "retained": 0.654,
+        "detected": 0.475
+       },
+       "aalwiez": {
+        "retained": 0.138,
+        "detected": 0.475
+       },
+       "pooled": {
+        "retained": 0.351,
+        "detected": 0.465
+       }
+      }
+     },
+     "L12": {
+      "gap_original": 0.19,
+      "detected_original": 0.618,
+      "separated": {
+       "jos": {
+        "retained": 0.43,
+        "detected": 0.5
+       },
+       "stil": {
+        "retained": 0.698,
+        "detected": 0.583
+       },
+       "aalwiez": {
+        "retained": 0.629,
+        "detected": 0.535
+       },
+       "pooled": {
+        "retained": 0.586,
+        "detected": 0.539
+       }
+      },
+      "control": {
+       "jos": {
+        "retained": 0.68,
+        "detected": 0.57
+       },
+       "stil": {
+        "retained": 1.016,
+        "detected": 0.623
+       },
+       "aalwiez": {
+        "retained": 1.012,
+        "detected": 0.61
+       },
+       "pooled": {
+        "retained": 0.903,
+        "detected": 0.601
+       }
+      }
+     }
+    }
+   },
+   "attn_to_adverb_top": 2.458
+  },
+  "web_progressive": {
+   "n": 364,
+   "n_neg": 651,
+   "top_marker_heads": [
+    [
+     3,
+     1
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     5,
+     2
+    ],
+    [
+     22,
+     5
+    ]
+   ],
+   "attn_to_marker_top": {
+    "original": 3.889,
+    "separated": 1.832,
+    "control": 3.627
+   },
+   "readout": {
+    "own": {
+     "L8": {
+      "gap_original": 8.294,
+      "detected_original": 0.995,
+      "separated": {
+       "jos": {
+        "retained": 1.022,
+        "detected": 0.995
+       },
+       "stil": {
+        "retained": 0.979,
+        "detected": 0.995
+       },
+       "aalwiez": {
+        "retained": 0.832,
+        "detected": 0.995
+       },
+       "pooled": {
+        "retained": 0.944,
+        "detected": 0.995
+       }
+      },
+      "control": {
+       "jos": {
+        "retained": 1.015,
+        "detected": 0.995
+       },
+       "stil": {
+        "retained": 0.997,
+        "detected": 0.995
+       },
+       "aalwiez": {
+        "retained": 0.896,
+        "detected": 0.995
+       },
+       "pooled": {
+        "retained": 0.969,
+        "detected": 0.995
+       }
+      }
+     },
+     "L12": {
+      "gap_original": 5.965,
+      "detected_original": 0.997,
+      "separated": {
+       "jos": {
+        "retained": 1.033,
+        "detected": 0.997
+       },
+       "stil": {
+        "retained": 0.985,
+        "detected": 1.0
+       },
+       "aalwiez": {
+        "retained": 0.914,
+        "detected": 1.0
+       },
+       "pooled": {
+        "retained": 0.977,
+        "detected": 0.999
+       }
+      },
+      "control": {
+       "jos": {
+        "retained": 1.015,
+        "detected": 0.997
+       },
+       "stil": {
+        "retained": 1.005,
+        "detected": 0.997
+       },
+       "aalwiez": {
+        "retained": 0.986,
+        "detected": 1.0
+       },
+       "pooled": {
+        "retained": 1.002,
+        "detected": 0.998
+       }
+      }
+     }
+    }
+   },
+   "attn_to_adverb_top": 2.346
+  }
+ }
+}

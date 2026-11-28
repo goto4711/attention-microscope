@@ -1,0 +1,15 @@
+# Raw corpora: several cannot be redistributed. Never commit.
+data/
+# Pipeline outputs that may contain corpus text or large arrays
+experiments/out/
+# Python / OS clutter
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+.DS_Store
+.claude/
+
+# Contains Jamaican NT verse text (© Bible Society of the West Indies).
+# Un-ignore only once the licence allows publishing these verses.
+specimens/real-specimens.js

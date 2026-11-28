@@ -1,0 +1,10 @@
+# Tested with Python 3.13 on macOS (CPU). Install: pip install -r experiments/requirements.txt
+torch==2.10.0
+transformers==4.57.1
+numpy==2.3.5
+scikit-learn==1.7.2
+pandas==2.3.3
+spacy==3.8.11
+en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
+openpyxl==3.1.5
+scipy==1.16.3
