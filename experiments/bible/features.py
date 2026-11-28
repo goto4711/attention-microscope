@@ -131,8 +131,20 @@ def load_gold(variety, feature) -> dict[tuple[str, int], str]:
     if not p.exists():
         return {}
     with open(p, encoding="utf-8") as f:
-        return {(r["ref"], int(r["word_idx"])): r["gold"].strip().lower()
+        gold = {(r["ref"], int(r["word_idx"])): r["gold"].strip().lower()
                 for r in csv.DictReader(f) if r.get("gold", "").strip()}
+    return {**gold, **load_recode(variety, feature)}
+
+
+def load_recode(variety, feature) -> dict[tuple[str, int], str]:
+    """Reviewed changes to hand labels (data/annotation/<variety>_recode.csv), e.g. after a
+    second annotator: applied on top of the gold column, which itself stays as annotated."""
+    p = Path("data/annotation") / f"{variety}_recode.csv"
+    if not p.exists():
+        return {}
+    with open(p, encoding="utf-8") as f:
+        return {(r["ref"], int(r["word_idx"])): r["gold"].strip()
+                for r in csv.DictReader(f) if r["feature"] == feature}
 
 
 def write_sheet(variety, feature, rows, k, rng):

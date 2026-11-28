@@ -70,8 +70,14 @@ def xy(z, rows, f, key=None):
             idx.append(k)
             y.append(lab)
             src.append(rows[vi].get("sources", {}).get(f, {}).get(str(wi), "?"))
-            unm.append(rows[vi].get("marking", {}).get(f, {}).get(str(wi)) == "unmarked"
-                       or (rows[vi]["ref"], int(wi)) in ju)
+            u = (rows[vi].get("marking", {}).get(f, {}).get(str(wi)) == "unmarked"
+                 or (rows[vi]["ref"], int(wi)) in ju)
+            # the candidate search let some words with their -s through (three Bs, professions):
+            # plural in meaning, but marked, so not unmarked plurals
+            if u and f == "plural" and key != "jnt" and \
+                    rows[vi]["words"][int(wi)].lower().rstrip("'’").endswith("s"):
+                u = False
+            unm.append(u)
     return np.array(idx, int), np.array(y, int), src, np.array(unm, bool)
 
 
