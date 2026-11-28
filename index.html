@@ -216,6 +216,19 @@ footer{color:var(--mute);font-size:13px;font-weight:300}
     </section>
   </div>
 
+  <section class="panel" id="rckwrap" hidden style="margin-top:16px">
+    <h2><span class="dc-highlight">During training</span></h2>
+    <p class="note" id="rcknote"></p>
+    <div class="grid2" style="margin-top:8px">
+      <div><h3>Heads</h3><div id="rck1"></div></div>
+      <div><h3>Does the model need them?</h3><div id="rck2"></div></div>
+    </div>
+    <div class="grid2" style="margin-top:14px">
+      <div><h3>Probe accuracy at layer 8</h3><div id="rck3"></div></div>
+      <div><h3>What happens</h3><ul class="how" id="rckhow" style="margin-top:4px"></ul></div>
+    </div>
+  </section>
+
   <section class="tip">
     <div class="k">Reading the real specimens</div>
     <ul class="how" id="rhow"></ul>
@@ -549,6 +562,32 @@ function renderMaps(){const mw=heat($('hmweb'),feat+'_web'),mj=heat($('hmjnt'),f
     metric=='prev'?`Attention from each word to the word just before it, whatever that word is (up to ${Math.round(Math.max(mw,mj)*100)}%).`:
     `Colour from 0 to the highest value in each grid (WEB ${(mw*100).toFixed(0)}%, JNT ${(mj*100).toFixed(0)}%).`}
 
+function renderCheckpoints(){const C=R.checkpoints;if(!C||!C.rows||C.rows.length<2)return;$('rckwrap').hidden=false;
+  const rows=C.rows,xs=rows.map(r=>Math.log10(r.step+100)),x0=Math.min(...xs),x1=Math.max(...xs);
+  const W=420,H=150,pl=30,pr=8,pt=8,pb=26,X=i=>pl+(xs[i]-x0)/(x1-x0)*(W-pl-pr),Y=(v,lo,hi)=>pt+(1-(v-lo)/(hi-lo))*(H-pt-pb);
+  const chart=(series,lo,hi,ticks,fmt)=>{let s=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">`;
+    ticks.forEach(t=>{const y=Y(t,lo,hi);s+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="${pl-4}" y="${y+4}" font-size="10" fill="var(--mute)" text-anchor="end">${fmt(t)}</text>`});
+    rows.forEach((r,i)=>{if(i%2==0||i==rows.length-1)s+=`<text x="${X(i)}" y="${H-8}" font-size="10" fill="var(--mute)" text-anchor="${i==rows.length-1?'end':i==0?'start':'middle'}">${r.step>=1000?(r.step/1000)+'k':r.step}</text>`});
+    series.forEach(([vals,col,dash])=>{const pts=vals.map((v,i)=>v==null?null:`${X(i)},${Y(Math.max(lo,Math.min(hi,v)),lo,hi)}`).filter(Boolean).join(' ');
+      s+=`<polyline points="${pts}" fill="none" stroke="var(${col})" stroke-width="2.5"${dash?' stroke-dasharray="5 4"':''}/>`;
+      vals.forEach((v,i)=>{if(v!=null)s+=`<circle cx="${X(i)}" cy="${Y(Math.max(lo,Math.min(hi,v)),lo,hi)}" r="2.5" fill="var(${col})"/>`})});
+    return s+'</svg>'};
+  const key=(items)=>`<p class="note" style="margin:4px 0 0">${items.map(([c,d,t])=>`<span style="color:var(${c});font-weight:700">${d?'- - ':'—'}</span> ${t}`).join(' &nbsp; ')}</p>`;
+  const pc=x=>Math.round(x*100)+'%';
+  $('rcknote').innerHTML=`Pythia-410m at ${rows.length} points in training (steps on a log scale; ${rows[rows.length-1].step.toLocaleString('en')} is the final model), on ${C.n_verses} Bible verses per variety plus every verse with a progressive. Silencing uses each checkpoint's own ${C.k} strongest previous-word heads below layer ${C.readout_layer} and its own probe direction.`;
+  $('rck1').innerHTML=chart([[rows.map(r=>r.prev_max),'--dc-purple'],[rows.map(r=>r.be_ing_4_5),'--dc-blue'],[rows.map(r=>r.be_ing_max),'--dc-blue',1]],0,1,[0,.5,1],pc)+
+    key([['--dc-purple',0,'strongest previous-word head'],['--dc-blue',0,'head 4.5: <i>-ing</i> → <i>be</i>'],['--dc-blue',1,'strongest <i>-ing</i> → <i>be</i> head']]);
+  const ab=(k,x)=>rows.map(r=>(r.ablation[k]||{})[x]??null);
+  $('rck2').innerHTML=chart([[ab('jnt_past','prev_word'),'--dc-purple'],[ab('jnt_progressive','prev_word'),'--dc-purple',1],[ab('web_progressive','be_ing_top5'),'--dc-blue'],[ab('jnt_past','random'),'--dc-grey',1]],0,1.2,[0,.5,1],pc)+
+    key([['--dc-purple',0,'Jamaican past, previous-word heads off'],['--dc-purple',1,'Jamaican progressive, same'],['--dc-blue',0,'English progressive, top 5 <i>be</i> heads off'],['--dc-grey',1,'random heads']]);
+  const li=C.probe_layers.indexOf(8),pv=(v)=>rows.map(r=>((r.probes[feat]||{})[v]||[])[li]??null),tr=rows.map(r=>((r.probes[feat]||{}).transfer||[])[li]??null);
+  $('rck3').innerHTML=chart([[pv('web'),'--dc-blue'],[pv('jnt'),'--dc-purple'],[tr,'--dc-purple',1]],.5,1,[.5,.75,1],v=>Math.round(v*100))+
+    key([['--dc-blue',0,`Standard English (${feat})`],['--dc-purple',0,'Jamaican Creole'],['--dc-purple',1,'Standard English direction on Jamaican (AUC)']]);
+  $('rckhow').innerHTML=[
+    `Previous-word heads form first, between steps 512 and 1,000. From then on the Jamaican markers depend on them: silencing them leaves about a quarter of Jamaican past and a fifth of progressive.`,
+    `English progressive starts on the same route: at step 512, silencing the heads that link <i>-ing</i> to <i>be</i> removes almost half of it, and until step 4,000 the strongest such head is a previous-word head (3.1). By step 8,000 head 4.5 has become a dedicated progressive head, as strong as 3.1, and English progressive no longer depends much on these heads.`,
+    `The Jamaican marking never moves off the generic route.`,
+    `Before any training (step 0), a probe already reads Jamaican past at around 80% from the words and their order: the probe accuracies alone say little, which is why the ablations matter.`].map(t=>`<li>${t}</li>`).join('')}
 function renderCollections(){const C=R.collections;if(!C||!C.rows||!C.rows.length)return;$('rcollwrap').hidden=false;
   const ml=C.mid_layers||[8,16],sp=(C.spearman||{})[feat];
   $('rcollnote').innerHTML=`Words with the standard marking (found by spaCy; rules for the Jamaican NT), projected onto the <b>${feat}</b> direction learned on the World English Bible: ROC AUC, layers ${ml[0]}–${ml[1]} (1 = separates perfectly, 0.5 = chance). `+
@@ -604,7 +643,7 @@ function renderAblation(){const rl=R.readout_layer;
 function render(){if($('real').hidden)return;
   $('vWeb').setAttribute('aria-pressed',va=='web');$('vJnt').setAttribute('aria-pressed',va=='jnt');
   $('rverse').value=pi;$('rhead').value=hk;$('rfeat').value=feat;$('rmetric').value=metric;
-  drawSpec();renderGrid();renderLens();renderMaps();renderAblation();renderCollections()}
+  drawSpec();renderGrid();renderLens();renderMaps();renderAblation();renderCollections();renderCheckpoints()}
 
 $('rverse').innerHTML=R.pairs.map((p,i)=>`<option value="${i}">${p.ref}</option>`).join('');
 $('rhead').innerHTML=R.heads.map(([l,h,w],i)=>`<option value="${i}">Head ${l}.${h} · ${esc(w)}</option>`).join('');
