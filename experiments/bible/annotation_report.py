@@ -41,8 +41,9 @@ def kappa(pairs):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--annotator", default="")
+    ap.add_argument("--note", default="", help="provenance note recorded with the report")
     a = ap.parse_args()
-    report = {"annotator": a.annotator, "note": "sheets sampled in equal strata by automatic label", "varieties": {}}
+    report = {"annotator": a.annotator, "provenance": a.note, "note": "sheets sampled in equal strata by automatic label", "varieties": {}}
     for v in VARIETIES:
         rv = {}
         for f in FEATURES:
