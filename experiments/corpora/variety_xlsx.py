@@ -108,7 +108,7 @@ def export(a):
             ws.cell(r, 1).alignment = Alignment(wrap_text=True)
             r += 1
         r += 1
-        present = [k for k in TABS if any(x["kind"] == k for x in rows)]
+        present = [k for k in TABS if any(x["kind"] == k for x in rows) and (not a.kinds or k in a.kinds)]
         for k in present:
             title, _, q, guide = TABS[k]
             ws.cell(r, 1, f"Tab '{title}'").font = Font(name=FONT, bold=True, size=12, color=PURPLE)
@@ -230,6 +230,7 @@ def main():
     sub = ap.add_subparsers(dest="cmd", required=True)
     e = sub.add_parser("export")
     e.add_argument("--only", nargs="*")
+    e.add_argument("--kinds", nargs="*", choices=list(TABS), help="only these tabs (default all)")
     i = sub.add_parser("import")
     i.add_argument("files", nargs="+")
     a = ap.parse_args()
